@@ -1,0 +1,1 @@
+DROP INDEX idx_categories_unique_name_type;

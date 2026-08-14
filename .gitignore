@@ -1,0 +1,19 @@
+# Environment
+.env
+
+# Build output
+/bin/
+/tmp/
+
+# Air live reload
+tmp/
+
+# OS
+.DS_Store
+
+# IDE (opsional)
+.vscode/
+.idea/
+
+# Test coverage
+*.out
