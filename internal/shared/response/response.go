@@ -61,6 +61,10 @@ func WriteSuccessWithMultipleData(w http.ResponseWriter, status int, data any, m
 	})
 }
 
+func WriteSuccessNoData(w http.ResponseWriter, status int) {
+	writeJSON(w, status, nil)
+}
+
 func StatusFromError(err error) (int, string) {
 	if errors.Is(err, apperror.ErrCategoryAlreadyExists) {
 		return http.StatusConflict, "ALREADY_EXIST"

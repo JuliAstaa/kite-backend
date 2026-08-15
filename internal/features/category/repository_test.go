@@ -3,6 +3,7 @@ package category
 import (
 	"backend/internal/shared/testutil"
 	"context"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -91,4 +92,78 @@ func TestCreateCategoryRepo(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetAllCategories(t *testing.T) {
+	t.Run("pagination motong data dengan benar", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+		for i := 0; i < 5; i++ {
+			categoryRepo.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
+		}
+
+		categories, total, err := categoryRepo.GetAllCategories(ctx, 2, 0)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if len(categories) != 2 {
+			t.Errorf("jumlah kategori %d, mau 2", len(categories))
+		}
+
+		if total != 5 {
+			t.Errorf("total data %d, mau 5", total)
+		}
+	})
+
+	t.Run("soft-deleted tidak muncul", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+
+		for i := 0; i < 3; i++ {
+			categoryRepo.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
+		}
+
+		categories, _, err := categoryRepo.GetAllCategories(ctx, 10, 0)
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+
+		_, err = categoryRepo.DeleteCategory(ctx, categories[0].ID)
+
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+
+		categories, total, err := categoryRepo.GetAllCategories(ctx, 10, 0)
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+
+		if total != 2 {
+			t.Errorf("total %d, mau 2", total)
+		}
+
+		if len(categories) != 2 {
+			t.Errorf("panjang kategori %d, mau 0", len(categories))
+		}
+
+	})
+
+	t.Run("kosong", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+		categories, total, err := categoryRepo.GetAllCategories(ctx, 10, 0)
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+		if len(categories) != 0 {
+			t.Errorf("panjang kategori %d, mau 0", len(categories))
+		}
+
+		if total != 0 {
+			t.Errorf("total %d, mau 0", total)
+		}
+	})
 }
