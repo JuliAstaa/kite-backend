@@ -120,7 +120,7 @@ func (r *CategoryRepository) DeleteCategory(ctx context.Context, id string) (Cat
 		return Category{}, err
 	}
 
-	if errors.As(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return Category{}, apperror.NotFoundError{Resource: "categories", ID: id}
 	}
 

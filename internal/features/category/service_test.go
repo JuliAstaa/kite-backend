@@ -14,6 +14,18 @@ func (f *FakeCategoryRepository) CreateCategory(ctx context.Context, name string
 	return f.CreateCategoryFunc(ctx, name, catType, color, icon)
 }
 
+func (f *FakeCategoryRepository) GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error) {
+	return f.GetAllCategories(ctx, limit, offset)
+}
+
+func (f *FakeCategoryRepository) PatchCategory(ctx context.Context, id string, name *string, catType *string, color *string, icon *string) (Category, error) {
+	return f.PatchCategory(ctx, id, name, catType, color, icon)
+}
+
+func (f *FakeCategoryRepository) DeleteCategory(ctx context.Context, id string) (Category, error) {
+	return f.DeleteCategory(ctx, id)
+}
+
 func TestCreateCategoryService(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()

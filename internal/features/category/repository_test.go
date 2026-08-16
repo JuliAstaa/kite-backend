@@ -1,26 +1,29 @@
 package category
 
 import (
+	"backend/internal/shared/apperror"
 	"backend/internal/shared/testutil"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
-var categoryRepo *CategoryRepository
+var categoryRepoTest *CategoryRepository
 
 func TestMain(m *testing.M) {
 	db := testutil.ConnectTestDB("../../../.env")
 
-	categoryRepo = NewCategoryRepository(db)
+	categoryRepoTest = NewCategoryRepository(db)
 
 	code := m.Run()
 	os.Exit(code)
 }
 
 func resetTable(t *testing.T) {
-	if _, err := categoryRepo.db.Exec("TRUNCATE categories CASCADE"); err != nil {
+	if _, err := categoryRepoTest.db.Exec("TRUNCATE categories CASCADE"); err != nil {
 		t.Error(err)
 	}
 }
@@ -43,7 +46,7 @@ func TestCreateCategoryRepo(t *testing.T) {
 			resetTable(t)
 			ctx := context.Background()
 
-			category, err := categoryRepo.CreateCategory(ctx, tt.catName, tt.catType, tt.color, tt.icon)
+			category, err := categoryRepoTest.CreateCategory(ctx, tt.catName, tt.catType, tt.color, tt.icon)
 			if tt.wantError {
 				if err == nil {
 					t.Errorf("tidak ada error, mau error constraint")
@@ -99,10 +102,10 @@ func TestGetAllCategories(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		for i := 0; i < 5; i++ {
-			categoryRepo.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
+			categoryRepoTest.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
 		}
 
-		categories, total, err := categoryRepo.GetAllCategories(ctx, 2, 0)
+		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 2, 0)
 
 		if err != nil {
 			t.Error(err)
@@ -122,21 +125,21 @@ func TestGetAllCategories(t *testing.T) {
 		ctx := context.Background()
 
 		for i := 0; i < 3; i++ {
-			categoryRepo.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
+			categoryRepoTest.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
 		}
 
-		categories, _, err := categoryRepo.GetAllCategories(ctx, 10, 0)
+		categories, _, err := categoryRepoTest.GetAllCategories(ctx, 10, 0)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
 
-		_, err = categoryRepo.DeleteCategory(ctx, categories[0].ID)
+		_, err = categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
 
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
 
-		categories, total, err := categoryRepo.GetAllCategories(ctx, 10, 0)
+		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 10, 0)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
@@ -154,7 +157,7 @@ func TestGetAllCategories(t *testing.T) {
 	t.Run("kosong", func(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
-		categories, total, err := categoryRepo.GetAllCategories(ctx, 10, 0)
+		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 10, 0)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
@@ -164,6 +167,95 @@ func TestGetAllCategories(t *testing.T) {
 
 		if total != 0 {
 			t.Errorf("total %d, mau 0", total)
+		}
+	})
+}
+
+func TestPatchCategory(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		catName  string
+		catType  string
+		catColor string
+		catIcon  string
+	}{
+		{"patches name", "kategori baru", "expense", "#ff44ff", "iniicon"},
+		{"patches type", "kategori 1", "income", "#ff44ff", "iniicon"},
+		{"patches color", "kategori 1", "expense", "#ff1133", "iniicon"},
+		{"patches icon", "kategori 1", "expense", "#ff44ff", "iniiconyangbaru"},
+		{"patches all field", "kategori baru", "income", "#aa44ff", "iniicon"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetTable(t)
+			ctx := context.Background()
+			categoryRepoTest.CreateCategory(ctx, "kategori 1", "expense", "#ff44ff", "iniicon")
+			categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+			timeBeforeUpdated := categories[0].UpdatedAt
+
+			updatedCategory, err := categoryRepoTest.PatchCategory(ctx, categories[0].ID, &tt.catName, &tt.catType, &tt.catColor, &tt.catIcon)
+
+			if err != nil {
+				t.Fatalf("error: %v", err)
+			}
+
+			if updatedCategory.Name != tt.catName {
+				t.Errorf("name %s, mau %s", updatedCategory.Name, tt.name)
+			}
+
+			if updatedCategory.Type != tt.catType {
+				t.Errorf("type %s, mau %s", updatedCategory.Type, tt.catType)
+			}
+
+			if updatedCategory.Color != tt.catColor {
+				t.Errorf("color %s, mau %s", updatedCategory.Color, tt.catColor)
+			}
+
+			if updatedCategory.Icon != tt.catIcon {
+				t.Errorf("icon %s, mau %s", updatedCategory.Icon, tt.catIcon)
+			}
+
+			if time.Time.Equal(timeBeforeUpdated, updatedCategory.UpdatedAt) {
+				t.Error("updated_at tidak berubah, harusnya berubah 1 detik")
+			}
+
+		})
+	}
+
+	t.Run("error category name sudah ada", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+
+		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
+		categoryRepoTest.CreateCategory(ctx, "minum", "expense", "#ffffff", "iniicon")
+
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+
+		newName := "minum"
+
+		_, err := categoryRepoTest.PatchCategory(ctx, categories[0].ID, &newName, nil, nil, nil)
+
+		if !errors.Is(err, apperror.ErrCategoryAlreadyExists) {
+			t.Errorf("tidak ada error, mau error constraint already have")
+
+		}
+
+	})
+
+	t.Run("error constraint type selain 'expense' dan 'income'", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+
+		newType := "lainnya"
+
+		_, err := categoryRepoTest.PatchCategory(ctx, categories[0].ID, nil, &newType, nil, nil)
+
+		if err == nil {
+			t.Errorf("tidak ada error, mau error constraint")
 		}
 	})
 }
