@@ -298,3 +298,32 @@ func TestDeleteCategoryHandler(t *testing.T) {
 	})
 
 }
+
+func TestMethodNotAllowed(t *testing.T) {
+	fakeService := &FakeCategoryService{}
+	h := NewCategoryHandler(fakeService)
+
+	tests := []struct {
+		name    string
+		method  string
+		url     string
+		handler func(http.ResponseWriter, *http.Request)
+	}{
+		{"categories pakai DELETE", http.MethodDelete, "/categories", h.HandlerCategories},
+		{"categories pakai PATCH", http.MethodPatch, "/categories", h.HandlerCategories},
+		{"category pakai POST", http.MethodPost, "/category/some-id", h.HandlerCategoryByID},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.url, nil)
+			rec := httptest.NewRecorder()
+
+			tt.handler(rec, req)
+
+			if rec.Code != http.StatusMethodNotAllowed {
+				t.Errorf("code %d, want %d", rec.Code, http.StatusMethodNotAllowed)
+			}
+		})
+	}
+}
