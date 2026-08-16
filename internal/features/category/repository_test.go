@@ -259,3 +259,28 @@ func TestPatchCategory(t *testing.T) {
 		}
 	})
 }
+
+func TestDeleteCategory(t *testing.T) {
+	resetTable(t)
+	ctx := context.Background()
+	categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
+	categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+
+	category, err := categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+	categories, total, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+
+	if !category.DeletedAt.Valid {
+		t.Errorf("deleted at masih null, mau isi")
+	}
+
+	if total != 0 {
+		t.Error("total tidak nol, mau nol")
+	}
+
+	if len(categories) != 0 {
+		t.Errorf("panjang categories tidak nol, harusnya 0")
+	}
+}
