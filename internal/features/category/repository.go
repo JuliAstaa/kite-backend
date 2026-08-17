@@ -14,6 +14,7 @@ type CategoryRepositorer interface {
 	GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error)
 	PatchCategory(ctx context.Context, id string, name *string, catType *string, color *string, icon *string) (Category, error)
 	DeleteCategory(ctx context.Context, id string) (Category, error)
+	GetCategoryByID(ctx context.Context, id string) (Category, error)
 }
 
 type CategoryRepository struct {
@@ -115,13 +116,38 @@ func (r *CategoryRepository) DeleteCategory(ctx context.Context, id string) (Cat
 		&category.UpdatedAt,
 		&category.DeletedAt,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Category{}, apperror.NotFoundError{Resource: "categories", ID: id}
+	}
 
 	if err != nil {
 		return Category{}, err
 	}
 
+	return category, nil
+}
+
+func (r CategoryRepository) GetCategoryByID(ctx context.Context, id string) (Category, error) {
+	var category Category
+	err := r.db.QueryRowContext(ctx, `SELECT * FROM categories WHERE id = $1 AND deleted_at IS NULL`, id).Scan(
+		&category.ID,
+		&category.Name,
+		&category.Type,
+		&category.Color,
+		&category.Icon,
+		&category.IsDefault,
+		&category.SortOrder,
+		&category.CreatedAt,
+		&category.UpdatedAt,
+		&category.DeletedAt,
+	)
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return Category{}, apperror.NotFoundError{Resource: "categories", ID: id}
+	}
+
+	if err != nil {
+		return Category{}, err
 	}
 
 	return category, nil

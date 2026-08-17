@@ -7,6 +7,7 @@ type CategoryServicer interface {
 	GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error)
 	PatchCategory(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error)
 	DeleteCategory(ctx context.Context, id string) (Category, error)
+	GetCategoryByID(ctx context.Context, id string) (Category, error)
 }
 
 type CategoryService struct {
@@ -31,4 +32,8 @@ func (s *CategoryService) PatchCategory(ctx context.Context, id string, requestB
 
 func (s *CategoryService) DeleteCategory(ctx context.Context, id string) (Category, error) {
 	return s.repo.DeleteCategory(ctx, id)
+}
+
+func (s *CategoryService) GetCategoryByID(ctx context.Context, id string) (Category, error) {
+	return s.repo.GetCategoryByID(ctx, id)
 }

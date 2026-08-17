@@ -258,29 +258,90 @@ func TestPatchCategory(t *testing.T) {
 			t.Errorf("tidak ada error, mau error constraint")
 		}
 	})
+	t.Run("not found", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+
+		_, err := categoryRepoTest.PatchCategory(ctx, "e9c9017d-3287-4711-8535-9e8faa7143da", nil, nil, nil, nil)
+
+		var nf apperror.NotFoundError
+		if !errors.As(err, &nf) {
+			t.Errorf("mau NotFoundError, dapat %v", err)
+		}
+	})
 }
 
 func TestDeleteCategory(t *testing.T) {
-	resetTable(t)
-	ctx := context.Background()
-	categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
-	categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+	t.Run("success", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
 
-	category, err := categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-	categories, total, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		category, err := categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+		categories, total, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
 
-	if !category.DeletedAt.Valid {
-		t.Errorf("deleted at masih null, mau isi")
-	}
+		if !category.DeletedAt.Valid {
+			t.Errorf("deleted at masih null, mau isi")
+		}
 
-	if total != 0 {
-		t.Error("total tidak nol, mau nol")
-	}
+		if total != 0 {
+			t.Error("total tidak nol, mau nol")
+		}
 
-	if len(categories) != 0 {
-		t.Errorf("panjang categories tidak nol, harusnya 0")
-	}
+		if len(categories) != 0 {
+			t.Errorf("panjang categories tidak nol, harusnya 0")
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+
+		_, err := categoryRepoTest.DeleteCategory(ctx, "e9c9017d-3287-4711-8535-9e8faa7143da")
+
+		var nf apperror.NotFoundError
+		if !errors.As(err, &nf) {
+			t.Errorf("mau NotFoundError, dapat %v", err)
+		}
+	})
+}
+
+func TestGetCategoryByIDRepository(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+
+		category, err := categoryRepoTest.GetCategoryByID(ctx, categories[0].ID)
+
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+
+		if category.ID != categories[0].ID {
+			t.Errorf("ID %s, mau %s", category.ID, categories[0].ID)
+		}
+
+		if category.Name != "makan" {
+			t.Errorf("name %s, mau makan", category.Name)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+
+		_, err := categoryRepoTest.GetCategoryByID(ctx, "e9c9017d-3287-4711-8535-9e8faa7143da")
+
+		var nf apperror.NotFoundError
+		if !errors.As(err, &nf) {
+			t.Errorf("mau NotFoundError, dapat %v", err)
+		}
+	})
+
 }
