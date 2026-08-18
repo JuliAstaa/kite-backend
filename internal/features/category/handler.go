@@ -273,6 +273,28 @@ func (h *CategoryHandler) HandlerCategoryByID(w http.ResponseWriter, r *http.Req
 			UpdatedAt: category.UpdatedAt,
 		}
 		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
+	case http.MethodPost:
+		ctx := r.Context()
+		category, err := h.service.RestoreCategory(ctx, id)
+
+		if err != nil {
+			status, code := response.StatusFromError(err)
+			response.WriteError(w, status, code, err.Error(), nil)
+			return
+		}
+
+		resp := CategoryResponse{
+			ID:        category.ID,
+			Name:      category.Name,
+			Type:      category.Type,
+			Color:     category.Color,
+			Icon:      category.Icon,
+			IsDefault: category.IsDefault,
+			SortOrder: category.SortOrder,
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
+		}
+		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
 	default:
 		response.WriteError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
 	}

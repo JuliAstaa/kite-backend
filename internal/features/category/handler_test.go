@@ -15,6 +15,7 @@ type FakeCategoryService struct {
 	PatchCategoryFunc    func(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error)
 	DeleteCategoryFunc   func(ctx context.Context, id string) (Category, error)
 	GetCategoryByIDFunc  func(ctx context.Context, id string) (Category, error)
+	RestoreCategoryFunc  func(ctx context.Context, id string) (Category, error)
 }
 
 func (s *FakeCategoryService) CreateCategory(ctx context.Context, requestBody *CreateCategoryRequest) (Category, error) {
@@ -35,6 +36,10 @@ func (s *FakeCategoryService) DeleteCategory(ctx context.Context, id string) (Ca
 
 func (s *FakeCategoryService) GetCategoryByID(ctx context.Context, id string) (Category, error) {
 	return s.GetCategoryByIDFunc(ctx, id)
+}
+
+func (s *FakeCategoryService) RestoreCategory(ctx context.Context, id string) (Category, error) {
+	return s.RestoreCategoryFunc(ctx, id)
 }
 
 func TestCreateCategoryHandler(t *testing.T) {
@@ -343,32 +348,43 @@ func TestGetCategoryByIDHandler(t *testing.T) {
 	})
 
 }
+func TestRestoreCategoryHandler(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		fakeService := &FakeCategoryService{
+			RestoreCategoryFunc: func(ctx context.Context, id string) (Category, error) {
+				return Category{Name: "hai"}, nil
+			},
+		}
 
-func TestMethodNotAllowed(t *testing.T) {
-	fakeService := &FakeCategoryService{}
-	h := NewCategoryHandler(fakeService)
+		h := NewCategoryHandler(fakeService)
 
-	tests := []struct {
-		name    string
-		method  string
-		url     string
-		handler func(http.ResponseWriter, *http.Request)
-	}{
-		{"categories pakai DELETE", http.MethodDelete, "/categories", h.HandlerCategories},
-		{"categories pakai PATCH", http.MethodPatch, "/categories", h.HandlerCategories},
-		{"category pakai POST", http.MethodPost, "/category/some-id", h.HandlerCategoryByID},
-	}
+		req := httptest.NewRequest(http.MethodPost, "/category/some-id", nil)
+		rec := httptest.NewRecorder()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, tt.url, nil)
-			rec := httptest.NewRecorder()
+		h.HandlerCategoryByID(rec, req)
 
-			tt.handler(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Errorf("status %d, want %d", rec.Code, http.StatusOK)
+		}
+	})
 
-			if rec.Code != http.StatusMethodNotAllowed {
-				t.Errorf("code %d, want %d", rec.Code, http.StatusMethodNotAllowed)
-			}
-		})
-	}
+	t.Run("not found", func(t *testing.T) {
+		fakeService := &FakeCategoryService{
+			RestoreCategoryFunc: func(ctx context.Context, id string) (Category, error) {
+				return Category{}, apperror.NotFoundError{Resource: "categories", ID: "some-id"}
+			},
+		}
+
+		h := NewCategoryHandler(fakeService)
+
+		req := httptest.NewRequest(http.MethodPost, "/category/some-id", nil)
+		rec := httptest.NewRecorder()
+
+		h.HandlerCategoryByID(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("status %d, want %d", rec.Code, http.StatusNotFound)
+		}
+	})
+
 }

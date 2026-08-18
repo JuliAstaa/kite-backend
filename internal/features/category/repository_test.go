@@ -345,3 +345,39 @@ func TestGetCategoryByIDRepository(t *testing.T) {
 	})
 
 }
+func TestRestoreCategoryRepository(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+
+		deletedCatgory, err := categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
+		category, err := categoryRepoTest.RestoreCategory(ctx, deletedCatgory.ID)
+
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+
+		if category.ID != categories[0].ID {
+			t.Errorf("ID %s, mau %s", category.ID, categories[0].ID)
+		}
+
+		if category.Name != "makan" {
+			t.Errorf("name %s, mau makan", category.Name)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		resetTable(t)
+		ctx := context.Background()
+
+		_, err := categoryRepoTest.RestoreCategory(ctx, "e9c9017d-3287-4711-8535-9e8faa7143da")
+
+		var nf apperror.NotFoundError
+		if !errors.As(err, &nf) {
+			t.Errorf("mau NotFoundError, dapat %v", err)
+		}
+	})
+
+}

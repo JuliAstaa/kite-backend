@@ -14,6 +14,7 @@ type FakeCategoryRepository struct {
 	PatchCategoryFunc    func(ctx context.Context, id string, name *string, catType *string, color *string, icon *string) (Category, error)
 	DeleteCategoryFunc   func(ctx context.Context, id string) (Category, error)
 	GetCategoryByIDFunc  func(ctx context.Context, id string) (Category, error)
+	RestoreCategoryFunc  func(ctx context.Context, id string) (Category, error)
 }
 
 func (f *FakeCategoryRepository) CreateCategory(ctx context.Context, name string, catType string, color string, icon string) (Category, error) {
@@ -34,6 +35,10 @@ func (f *FakeCategoryRepository) DeleteCategory(ctx context.Context, id string) 
 
 func (f *FakeCategoryRepository) GetCategoryByID(ctx context.Context, id string) (Category, error) {
 	return f.GetCategoryByIDFunc(ctx, id)
+}
+
+func (f *FakeCategoryRepository) RestoreCategory(ctx context.Context, id string) (Category, error) {
+	return f.RestoreCategoryFunc(ctx, id)
 }
 
 func TestCreateCategoryService(t *testing.T) {
@@ -301,6 +306,48 @@ func TestGetCategoryByIDService(t *testing.T) {
 		serviceTest := NewCategoryService(fakeRepo)
 
 		_, err := serviceTest.GetCategoryByID(ctx, "inisebuahid")
+
+		if err == nil {
+			t.Error("harusnya DB error, tetapi tidak dapat")
+		}
+
+		if err.Error() != "DB error" {
+			t.Errorf("error %q, mau %q", err.Error(), "DB error")
+		}
+	})
+
+}
+
+func TestRestoreCategoryService(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		fakeRepo := &FakeCategoryRepository{
+			RestoreCategoryFunc: func(ctx context.Context, id string) (Category, error) {
+				return Category{Name: "makan"}, nil
+			},
+		}
+		serviceTest := NewCategoryService(fakeRepo)
+
+		category, err := serviceTest.RestoreCategory(ctx, "inisebuahid")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+
+		if category.Name != "makan" {
+			t.Errorf("name %s, mau makan", category.Name)
+		}
+	})
+
+	t.Run("forward error from db", func(t *testing.T) {
+		ctx := context.Background()
+		fakeRepo := &FakeCategoryRepository{
+			RestoreCategoryFunc: func(ctx context.Context, id string) (Category, error) {
+				return Category{}, errors.New("DB error")
+			},
+		}
+		serviceTest := NewCategoryService(fakeRepo)
+
+		_, err := serviceTest.RestoreCategory(ctx, "inisebuahid")
 
 		if err == nil {
 			t.Error("harusnya DB error, tetapi tidak dapat")
