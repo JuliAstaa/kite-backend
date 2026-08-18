@@ -70,6 +70,11 @@ func StatusFromError(err error) (int, string) {
 		return http.StatusConflict, "ALREADY_EXIST"
 	}
 
+	var ae apperror.AlreadyExistsErr
+	if errors.As(err, &ae) {
+		return http.StatusConflict, "ALREADY_EXIST"
+	}
+
 	var nf apperror.NotFoundError
 	if errors.As(err, &nf) {
 		return http.StatusNotFound, "NOT_FOUND"

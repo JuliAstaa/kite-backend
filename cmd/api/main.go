@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/internal/features/category"
+	"backend/internal/features/wallet"
 	"backend/internal/platform"
 	"backend/internal/platform/config"
 	"backend/internal/platform/database"
@@ -24,8 +25,13 @@ func main() {
 	categoryService := category.NewCategoryService(categoryRepo)
 	categoryHandler := category.NewCategoryHandler(categoryService)
 
+	walletRepo := wallet.NewWalletRepository(db)
+	walletService := wallet.NewWalletService(walletRepo)
+	walletHandler := wallet.NewWalletHandler(walletService)
+
 	router := platform.NewRouter(platform.Handlers{
 		Category: categoryHandler,
+		Wallet:   walletHandler,
 	})
 
 	svr := &http.Server{Addr: fmt.Sprintf(":%s", cfg.Port), Handler: router}
