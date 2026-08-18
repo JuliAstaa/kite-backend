@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/internal/features/category"
+	"backend/internal/platform"
 	"backend/internal/platform/config"
 	"backend/internal/platform/database"
 	"context"
@@ -23,10 +24,11 @@ func main() {
 	categoryService := category.NewCategoryService(categoryRepo)
 	categoryHandler := category.NewCategoryHandler(categoryService)
 
-	mux := http.NewServeMux()
-	category.RegisterCategoryRoutes(mux, categoryHandler)
+	router := platform.NewRouter(platform.Handlers{
+		Category: categoryHandler,
+	})
 
-	svr := &http.Server{Addr: fmt.Sprintf(":%s", cfg.Port), Handler: mux}
+	svr := &http.Server{Addr: fmt.Sprintf(":%s", cfg.Port), Handler: router}
 
 	go func() {
 		if err := svr.ListenAndServe(); err != nil && err != http.ErrServerClosed {

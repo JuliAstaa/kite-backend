@@ -14,8 +14,8 @@ type CategoryHandler struct {
 	service CategoryServicer
 }
 
-func NewCategoryHandler(service CategoryServicer) CategoryHandler {
-	return CategoryHandler{service: service}
+func NewCategoryHandler(service CategoryServicer) *CategoryHandler {
+	return &CategoryHandler{service: service}
 }
 
 func (h *CategoryHandler) HandlerCategories(w http.ResponseWriter, r *http.Request) {
