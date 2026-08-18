@@ -66,10 +66,6 @@ func WriteSuccessNoData(w http.ResponseWriter, status int) {
 }
 
 func StatusFromError(err error) (int, string) {
-	if errors.Is(err, apperror.ErrCategoryAlreadyExists) {
-		return http.StatusConflict, "ALREADY_EXIST"
-	}
-
 	var ae apperror.AlreadyExistsErr
 	if errors.As(err, &ae) {
 		return http.StatusConflict, "ALREADY_EXIST"

@@ -33,7 +33,7 @@ func (r *CategoryRepository) CreateCategory(ctx context.Context, name string, ca
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return Category{}, apperror.ErrCategoryAlreadyExists
+			return Category{}, apperror.AlreadyExistsErr{Resource: "categories", Name: name, Type: catType}
 		}
 		return Category{}, err
 	}
@@ -95,7 +95,7 @@ func (r *CategoryRepository) PatchCategory(ctx context.Context, id string, name 
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return Category{}, apperror.ErrCategoryAlreadyExists
+			return Category{}, apperror.AlreadyExistsErr{Resource: "categories", Name: *name, Type: *catType}
 		}
 		return Category{}, err
 	}
