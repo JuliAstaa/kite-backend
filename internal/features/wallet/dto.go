@@ -18,10 +18,10 @@ type WalletResponse struct {
 type CreateWalletRequest struct {
 	Name                string `json:"name"`
 	Type                string `json:"type"`
-	InitialBalance      *int   `json:"initial_balance"`
+	InitialBalance      int    `json:"initial_balance"`
 	Color               string `json:"color"`
 	Icon                string `json:"icon"`
-	IsExcludedFromTotal *bool  `json:"is_excluded_from_total"`
+	IsExcludedFromTotal bool   `json:"is_excluded_from_total"`
 }
 
 type PatchWalletRequest struct {
