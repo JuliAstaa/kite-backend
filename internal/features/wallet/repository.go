@@ -15,6 +15,7 @@ type WalletRepositorer interface {
 	PatchWallet(ctx context.Context, id string, name *string, walletType *string, initialBalancae *int, color *string, icon *string, IsExcludedFromTotal *bool) (Wallet, error)
 	GetWalletByID(ctx context.Context, id string) (Wallet, error)
 	DeleteWallet(ctx context.Context, id string) (Wallet, error)
+	RestoreWallet(ctx context.Context, id string) (Wallet, error)
 }
 
 type WalletRepository struct {
@@ -128,6 +129,33 @@ func (r *WalletRepository) GetWalletByID(ctx context.Context, id string) (Wallet
 func (r *WalletRepository) DeleteWallet(ctx context.Context, id string) (Wallet, error) {
 	var wallet Wallet
 	err := r.db.QueryRowContext(ctx, `UPDATE wallets SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, type, initial_balance, color, icon, is_excluded_from_total, sort_order, created_at, updated_at, deleted_at`, id).Scan(
+		&wallet.ID,
+		&wallet.Name,
+		&wallet.Type,
+		&wallet.InitialBalance,
+		&wallet.Color,
+		&wallet.Icon,
+		&wallet.IsExcludedFromTotal,
+		&wallet.SortOrder,
+		&wallet.CreatedAt,
+		&wallet.UpdatedAt,
+		&wallet.DeletedAt,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return Wallet{}, apperror.NotFoundError{Resource: "wallets", ID: id}
+	}
+
+	if err != nil {
+		return Wallet{}, err
+	}
+
+	return wallet, nil
+}
+
+func (r *WalletRepository) RestoreWallet(ctx context.Context, id string) (Wallet, error) {
+	var wallet Wallet
+	err := r.db.QueryRowContext(ctx, `UPDATE wallets SET deleted_at = NULL, updated_at = now() WHERE id = $1 AND deleted_at IS NOT NULL RETURNING id, name, type, initial_balance, color, icon, is_excluded_from_total, sort_order, created_at, updated_at, deleted_at`, id).Scan(
 		&wallet.ID,
 		&wallet.Name,
 		&wallet.Type,

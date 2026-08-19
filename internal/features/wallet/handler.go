@@ -292,7 +292,33 @@ func (h *WalletHandler) HandlerWalletByID(w http.ResponseWriter, r *http.Request
 		}
 		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
 
+	case http.MethodPost:
+		ctx := r.Context()
+
+		wallet, err := h.service.RestoreWallet(ctx, id)
+
+		if err != nil {
+			status, code := response.StatusFromError(err)
+			response.WriteError(w, status, code, err.Error(), nil)
+			return
+		}
+
+		resp := WalletResponse{
+			ID:                  wallet.ID,
+			Name:                wallet.Name,
+			Type:                wallet.Type,
+			InitialBalance:      wallet.InitialBalance,
+			Color:               wallet.Color,
+			Icon:                wallet.Icon,
+			IsExcludedFromTotal: wallet.IsExcludedFromTotal,
+			SortOrder:           wallet.SortOrder,
+			CreatedAt:           wallet.CreatedAt,
+			UpdatedAt:           wallet.UpdatedAt,
+		}
+		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
+
 	default:
 		response.WriteError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
 	}
+
 }
