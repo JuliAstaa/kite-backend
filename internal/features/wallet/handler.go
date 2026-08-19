@@ -228,7 +228,7 @@ func (h *WalletHandler) HandlerWalletByID(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		resp := Wallet{
+		resp := WalletResponse{
 			ID:                  wallet.ID,
 			Name:                wallet.Name,
 			Type:                wallet.Type,
