@@ -7,6 +7,7 @@ type WalletServicer interface {
 	GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error)
 	PatchWallet(ctx context.Context, id string, reqBody *PatchWalletRequest) (Wallet, error)
 	GetWalletByID(ctx context.Context, id string) (Wallet, error)
+	DeleteWallet(ctx context.Context, id string) (Wallet, error)
 }
 
 type WalletService struct {
@@ -31,4 +32,8 @@ func (s *WalletService) PatchWallet(ctx context.Context, id string, reqBody *Pat
 
 func (s *WalletService) GetWalletByID(ctx context.Context, id string) (Wallet, error) {
 	return s.repo.GetWalletByID(ctx, id)
+}
+
+func (s *WalletService) DeleteWallet(ctx context.Context, id string) (Wallet, error) {
+	return s.repo.DeleteWallet(ctx, id)
 }
