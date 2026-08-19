@@ -11,6 +11,7 @@ import (
 
 type WalletRepositorer interface {
 	CreateWallet(ctx context.Context, name string, walletType string, initialBalancae int, color string, icon string, IsExcludedFromTotal bool) (Wallet, error)
+	GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error)
 }
 
 type WalletRepository struct {
@@ -32,4 +33,26 @@ func (r *WalletRepository) CreateWallet(ctx context.Context, name string, wallet
 		return Wallet{}, err
 	}
 	return wallet, nil
+}
+
+func (r *WalletRepository) GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT * FROM wallets WHERE deleted_at IS NULL LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	wallets := []Wallet{}
+	for rows.Next() {
+		var wallet Wallet
+		if err := rows.Scan(&wallet.ID, &wallet.Name, &wallet.Type, &wallet.InitialBalance, &wallet.Color, &wallet.Icon, &wallet.IsExcludedFromTotal, &wallet.SortOrder, &wallet.CreatedAt, &wallet.UpdatedAt, &wallet.DeletedAt); err != nil {
+			return nil, 0, err
+		}
+		wallets = append(wallets, wallet)
+	}
+
+	var total int
+	err = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM wallets WHERE deleted_at IS NULL`).Scan(&total)
+
+	return wallets, total, nil
 }
