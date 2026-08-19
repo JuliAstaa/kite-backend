@@ -13,6 +13,7 @@ type WalletRepositorer interface {
 	CreateWallet(ctx context.Context, name string, walletType string, initialBalancae int, color string, icon string, IsExcludedFromTotal bool) (Wallet, error)
 	GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error)
 	PatchWallet(ctx context.Context, id string, name *string, walletType *string, initialBalancae *int, color *string, icon *string, IsExcludedFromTotal *bool) (Wallet, error)
+	GetWalletByID(ctx context.Context, id string) (Wallet, error)
 }
 
 type WalletRepository struct {
@@ -90,6 +91,33 @@ func (r *WalletRepository) PatchWallet(ctx context.Context, id string, name *str
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return Wallet{}, apperror.AlreadyExistsErr{Resource: "wallets", Name: *name, Type: *walletType}
 		}
+		return Wallet{}, err
+	}
+
+	return wallet, nil
+}
+
+func (r *WalletRepository) GetWalletByID(ctx context.Context, id string) (Wallet, error) {
+	var wallet Wallet
+	err := r.db.QueryRowContext(ctx, `SELECT * FROM wallets WHERE id = $1 AND deleted_at IS NULL`, id).Scan(
+		&wallet.ID,
+		&wallet.Name,
+		&wallet.Type,
+		&wallet.InitialBalance,
+		&wallet.Color,
+		&wallet.Icon,
+		&wallet.IsExcludedFromTotal,
+		&wallet.SortOrder,
+		&wallet.CreatedAt,
+		&wallet.UpdatedAt,
+		&wallet.DeletedAt,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return Wallet{}, apperror.NotFoundError{Resource: "wallets", ID: id}
+	}
+
+	if err != nil {
 		return Wallet{}, err
 	}
 
