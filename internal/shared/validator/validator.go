@@ -11,3 +11,12 @@ func IsValidHexColor(color string) bool {
 func IsEmptyString(value string) bool {
 	return value == ""
 }
+
+func IsOneOf(value string, allowed ...string) bool {
+	for _, a := range allowed {
+		if value == a {
+			return true
+		}
+	}
+	return false
+}
