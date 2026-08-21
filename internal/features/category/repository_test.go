@@ -149,7 +149,7 @@ func TestGetAllCategories(t *testing.T) {
 		}
 
 		if len(categories) != 2 {
-			t.Errorf("panjang kategori %d, mau 0", len(categories))
+			t.Errorf("panjang kategori %d, mau 2", len(categories))
 		}
 
 	})
@@ -202,7 +202,7 @@ func TestPatchCategory(t *testing.T) {
 			}
 
 			if updatedCategory.Name != tt.catName {
-				t.Errorf("name %s, mau %s", updatedCategory.Name, tt.name)
+				t.Errorf("name %s, mau %s", updatedCategory.Name, tt.catName)
 			}
 
 			if updatedCategory.Type != tt.catType {
@@ -218,7 +218,7 @@ func TestPatchCategory(t *testing.T) {
 			}
 
 			if time.Time.Equal(timeBeforeUpdated, updatedCategory.UpdatedAt) {
-				t.Error("updated_at tidak berubah, harusnya berubah 1 detik")
+				t.Error("updated_at tidak berubah, harusnya berubah")
 			}
 
 		})
@@ -234,11 +234,13 @@ func TestPatchCategory(t *testing.T) {
 		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
 
 		newName := "minum"
+		newType := "expense"
 
-		_, err := categoryRepoTest.PatchCategory(ctx, categories[0].ID, &newName, nil, nil, nil)
+		_, err := categoryRepoTest.PatchCategory(ctx, categories[0].ID, &newName, &newType, nil, nil)
 
-		if !errors.Is(err, apperror.ErrCategoryAlreadyExists) {
-			t.Errorf("tidak ada error, mau error constraint already have")
+		var alreadyExistErr apperror.AlreadyExistsErr
+		if !errors.As(err, &alreadyExistErr) {
+			t.Errorf("tidak ada error, mau error constraint already exist")
 
 		}
 

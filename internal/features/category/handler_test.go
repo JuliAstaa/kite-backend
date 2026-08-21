@@ -80,7 +80,7 @@ func TestCreateCategoryHandler(t *testing.T) {
 	t.Run("service error - already exist", func(t *testing.T) {
 		fakeService := &FakeCategoryService{
 			CreateCategoryFunc: func(ctx context.Context, requestBody *CreateCategoryRequest) (Category, error) {
-				return Category{}, apperror.ErrCategoryAlreadyExists
+				return Category{}, apperror.AlreadyExistsErr{Resource: "categories", Name: requestBody.Name, Type: requestBody.Type}
 			},
 		}
 
@@ -231,7 +231,7 @@ func TestPatchCategoryHandler(t *testing.T) {
 	t.Run("service error - already exist", func(t *testing.T) {
 		fakeService := &FakeCategoryService{
 			PatchCategoryFunc: func(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error) {
-				return Category{}, apperror.ErrCategoryAlreadyExists
+				return Category{}, apperror.AlreadyExistsErr{Resource: "categories", Name: *requestBody.Name, Type: *requestBody.Type}
 			},
 		}
 
