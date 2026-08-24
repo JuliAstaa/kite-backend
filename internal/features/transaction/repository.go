@@ -41,11 +41,15 @@ func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *Cr
 		return Transaction{}, TransactionDetail{}, err
 	}
 
+	var catIdTemp, catNameTemp, catTypeTemp sql.NullString
+	var walletIdTetmp, walletNameTemp sql.NullString
+	var catDelTemp, walletDeleTemp, toWalletDeleTemp sql.NullTime
+
 	var txDetail TransactionDetail
 	err = r.db.QueryRowContext(ctx, `SELECT t.id, t.type, t.amount, t.note, t.occurred_at,  
 									w.id, w.name, w.deleted_at,
 									c.id, c.name, c.type, c.deleted_at,
-									tw.id, tw.name, tw.deleted_at
+									tw.id, tw.name, tw.deleted_at FROM transactions t
 									JOIN wallets w ON w.id = t.wallet_id
 									LEFT JOIN categories c ON c.id = t.category_id
 									LEFT JOIN wallets tw ON tw.id = t.to_wallet_id
@@ -57,18 +61,37 @@ func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *Cr
 		&txDetail.OccurredAt,
 		&txDetail.Wallet.ID,
 		&txDetail.Wallet.Name,
-		&txDetail.Wallet.IsDeleted,
-		&txDetail.Category.ID,
-		&txDetail.Category.Name,
-		&txDetail.Category.Type,
-		&txDetail.Category.IsDeleted,
-		&txDetail.ToWallet.ID,
-		&txDetail.ToWallet.Name,
-		&txDetail.ToWallet.IsDeleted,
+		&walletDeleTemp,
+		&catIdTemp,
+		&catNameTemp,
+		&catTypeTemp,
+		&catDelTemp,
+		&walletIdTetmp,
+		&walletNameTemp,
+		&toWalletDeleTemp,
 	)
 
 	if err != nil {
 		return Transaction{}, TransactionDetail{}, err
+	}
+
+	txDetail.Wallet.IsDeleted = walletDeleTemp.Valid
+
+	if catIdTemp.Valid {
+		txDetail.Category = &CategoryRef{
+			ID:        catIdTemp.String,
+			Name:      catNameTemp.String,
+			Type:      catTypeTemp.String,
+			IsDeleted: catDelTemp.Valid,
+		}
+	}
+
+	if walletIdTetmp.Valid {
+		txDetail.ToWallet = &WalletRef{
+			ID:        walletIdTetmp.String,
+			Name:      walletNameTemp.String,
+			IsDeleted: toWalletDeleTemp.Valid,
+		}
 	}
 
 	return tsx, txDetail, nil
