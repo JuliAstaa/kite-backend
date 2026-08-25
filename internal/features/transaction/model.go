@@ -56,3 +56,8 @@ type TransactionDetail struct {
 	Category   *CategoryRef
 	ToWallet   *WalletRef
 }
+
+type CategoryInfo struct {
+	ID   string
+	Type string
+}

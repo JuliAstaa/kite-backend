@@ -1,7 +1,6 @@
 package apperror
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -24,4 +23,11 @@ func (e AlreadyExistsErr) Error() string {
 	return fmt.Sprintf("%s dengan name %s dan %s yang sama sudah ada", e.Resource, e.Name, e.Type)
 }
 
-var ErrCategoryAlreadyExists = errors.New("kategori dengan nama dan tipe yang sama sudah ada")
+type ValidationError struct {
+	Field   string
+	Message string
+}
+
+func (e ValidationError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Field, e.Message)
+}

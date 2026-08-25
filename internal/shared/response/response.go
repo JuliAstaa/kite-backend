@@ -71,6 +71,11 @@ func StatusFromError(err error) (int, string) {
 		return http.StatusConflict, "ALREADY_EXIST"
 	}
 
+	var ve apperror.ValidationError
+	if errors.As(err, &ve) {
+		return http.StatusBadRequest, "VALIDATION_ERROR"
+	}
+
 	var nf apperror.NotFoundError
 	if errors.As(err, &nf) {
 		return http.StatusNotFound, "NOT_FOUND"

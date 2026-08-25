@@ -6,6 +6,7 @@ import (
 )
 
 type TransactionRepositorer interface {
+	CreateTransaction(ctx context.Context, param *CreateTransactionParams) (TransactionDetail, error)
 }
 
 type TransactionRepository struct {
@@ -16,36 +17,24 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *CreateTransactionParams) (Transaction, TransactionDetail, error) {
+func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *CreateTransactionParams) (TransactionDetail, error) {
 
 	var tsx Transaction
+	var txDetail TransactionDetail
 	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO transactions(type, amount, wallet_id, to_wallet_id, category_id, note, occurred_at, recurring_rule_id, wishlist_item_id) 
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-		RETURNING id, type, amount, wallet_id, to_wallet_id, category_id, note, occurred_at, recurring_rule_id, wishlist_item_id, created_at, updated_at, deleted_at`, param.Type, param.Amount, param.WalletID, param.ToWalletID, param.CategoryID, param.Note, param.OccurredAt, param.RecurringRuleID, param.WishlistItemID).Scan(
+		RETURNING id`, param.Type, param.Amount, param.WalletID, param.ToWalletID, param.CategoryID, param.Note, param.OccurredAt, param.RecurringRuleID, param.WishlistItemID).Scan(
 		&tsx.ID,
-		&tsx.Type,
-		&tsx.Amount,
-		&tsx.WalletID,
-		&tsx.ToWalletID,
-		&tsx.CategoryID,
-		&tsx.Note,
-		&tsx.OccurredAt,
-		&tsx.RecurringRuleID,
-		&tsx.WishlistItemID,
-		&tsx.CreatedAt,
-		&tsx.UpdatedAt,
-		&tsx.DeletedAt,
 	)
 	if err != nil {
-		return Transaction{}, TransactionDetail{}, err
+		return TransactionDetail{}, err
 	}
 
 	var catIdTemp, catNameTemp, catTypeTemp sql.NullString
 	var walletIdTetmp, walletNameTemp sql.NullString
 	var catDelTemp, walletDeleTemp, toWalletDeleTemp sql.NullTime
 
-	var txDetail TransactionDetail
 	err = r.db.QueryRowContext(ctx, `SELECT t.id, t.type, t.amount, t.note, t.occurred_at,  
 									w.id, w.name, w.deleted_at,
 									c.id, c.name, c.type, c.deleted_at,
@@ -72,7 +61,7 @@ func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *Cr
 	)
 
 	if err != nil {
-		return Transaction{}, TransactionDetail{}, err
+		return TransactionDetail{}, err
 	}
 
 	txDetail.Wallet.IsDeleted = walletDeleTemp.Valid
@@ -94,5 +83,5 @@ func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *Cr
 		}
 	}
 
-	return tsx, txDetail, nil
+	return txDetail, nil
 }

@@ -16,6 +16,7 @@ type FakeWalletService struct {
 	GetWalletByIDFunc func(ctx context.Context, id string) (Wallet, error)
 	DeleteWalletFunc  func(ctx context.Context, id string) (Wallet, error)
 	RestoreWalletFunc func(ctx context.Context, id string) (Wallet, error)
+	IsWalletExistFunc func(ctx context.Context, id string) error
 }
 
 func (h *FakeWalletService) CreateWallet(ctx context.Context, reqBody *CreateWalletRequest) (Wallet, error) {
@@ -40,6 +41,10 @@ func (h *FakeWalletService) DeleteWallet(ctx context.Context, id string) (Wallet
 
 func (h *FakeWalletService) RestoreWallet(ctx context.Context, id string) (Wallet, error) {
 	return h.RestoreWalletFunc(ctx, id)
+}
+
+func (h *FakeWalletService) IsWalletExist(ctx context.Context, id string) error {
+	return h.IsWalletExistFunc(ctx, id)
 }
 
 func TestCreateWalletHandler(t *testing.T) {
