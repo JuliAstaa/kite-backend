@@ -14,6 +14,10 @@ type CategoriesReader interface {
 	GetCategoryInfo(ctx context.Context, id string) (CategoryInfo, error)
 }
 
+type TransactionServicer interface {
+	CreateTransaction(ctx context.Context, reqBody CreateTransactionRequest) (TransactionDetail, error)
+}
+
 type TransactionService struct {
 	repo     TransactionRepositorer
 	wallet   WalletsReader
@@ -24,7 +28,7 @@ func NewTransactionService(repo TransactionRepositorer, wallet WalletsReader, ca
 	return &TransactionService{repo: repo, wallet: wallet, category: category}
 }
 
-func (s *TransactionService) CreateTransaction(ctx context.Context, reqBody *CreateTransactionRequest) (TransactionDetail, error) {
+func (s *TransactionService) CreateTransaction(ctx context.Context, reqBody CreateTransactionRequest) (TransactionDetail, error) {
 	if err := s.wallet.IsWalletExist(ctx, reqBody.WalletID); err != nil {
 		return TransactionDetail{}, err
 	}
@@ -94,6 +98,6 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, reqBody *Cre
 		OccurredAt: reqBody.OccurredAt,
 	}
 
-	return s.repo.CreateTransaction(ctx, &params)
+	return s.repo.CreateTransaction(ctx, params)
 
 }

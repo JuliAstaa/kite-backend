@@ -6,7 +6,7 @@ import (
 )
 
 type TransactionRepositorer interface {
-	CreateTransaction(ctx context.Context, param *CreateTransactionParams) (TransactionDetail, error)
+	CreateTransaction(ctx context.Context, param CreateTransactionParams) (TransactionDetail, error)
 }
 
 type TransactionRepository struct {
@@ -17,7 +17,7 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-func (r *TransactionRepository) CreateTransaction(ctx context.Context, param *CreateTransactionParams) (TransactionDetail, error) {
+func (r *TransactionRepository) CreateTransaction(ctx context.Context, param CreateTransactionParams) (TransactionDetail, error) {
 
 	var tsx Transaction
 	var txDetail TransactionDetail

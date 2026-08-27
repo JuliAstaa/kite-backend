@@ -5,18 +5,14 @@ import (
 )
 
 type TransactionResponse struct {
-	ID              string    `json:"id"`
-	Type            string    `json:"type"`
-	Amount          int       `json:"amount"`
-	WalletID        string    `json:"wallet_id"`
-	ToWalletID      string    `json:"to_wallet_id"`
-	CategoryID      string    `json:"category_id"`
-	Note            string    `json:"note"`
-	OccurredAt      time.Time `json:"occurred_at"`
-	RecurringRuleID string    `json:"recurring_rule_id"`
-	WishlistItemID  string    `json:"wishlist_item_id"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID         string       `json:"id"`
+	Type       string       `json:"type"`
+	Amount     int          `json:"amount"`
+	Note       string       `json:"note"`
+	OccurredAt time.Time    `json:"occurred_at"`
+	Wallet     WalletRef    `json:"wallet"`
+	Category   *CategoryRef `json:"category"`
+	ToWallet   *WalletRef   `json:"to_wallet"`
 }
 
 type CreateTransactionRequest struct {

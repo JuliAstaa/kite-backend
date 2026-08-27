@@ -34,16 +34,16 @@ type CreateTransactionParams struct {
 }
 
 type WalletRef struct {
-	ID        string
-	Name      string
-	IsDeleted bool
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	IsDeleted bool   `json:"is_deleted"`
 }
 
 type CategoryRef struct {
-	ID        string
-	Name      string
-	Type      string
-	IsDeleted bool
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	IsDeleted bool   `json:"is_deleted"`
 }
 
 type TransactionDetail struct {
