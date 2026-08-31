@@ -24,3 +24,17 @@ type CreateTransactionRequest struct {
 	Note       string    `json:"note"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
+
+type TransactionFilter struct {
+	From       time.Time
+	To         time.Time
+	Type       string
+	CategoryID string
+	WalletID   string
+	MinAmount  int
+	MaxAmount  int
+	Query      string
+	Sort       string
+	Limit      int
+	Offset     int
+}

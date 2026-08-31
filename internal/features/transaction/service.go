@@ -16,6 +16,7 @@ type CategoriesReader interface {
 
 type TransactionServicer interface {
 	CreateTransaction(ctx context.Context, reqBody CreateTransactionRequest) (TransactionDetail, error)
+	GetAllTransactions(ctx context.Context, filter TransactionFilter) ([]TransactionDetail, int, error)
 }
 
 type TransactionService struct {
@@ -100,4 +101,8 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, reqBody Crea
 
 	return s.repo.CreateTransaction(ctx, params)
 
+}
+
+func (s *TransactionService) GetAllTransactions(ctx context.Context, filter TransactionFilter) ([]TransactionDetail, int, error) {
+	return s.repo.GetAllTransactions(ctx, filter)
 }

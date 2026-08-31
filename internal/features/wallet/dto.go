@@ -32,3 +32,17 @@ type PatchWalletRequest struct {
 	Icon                *string `json:"icon"`
 	IsExcludedFromTotal *bool   `json:"is_excluded_from_total"`
 }
+
+type TransactionFilter struct {
+	From       time.Time
+	To         time.Time
+	Type       string
+	CategoryID string
+	WalletID   string
+	MinAmount  int
+	MaxAmount  int
+	Query      string
+	Sort       string
+	Limit      int
+	Offset     int
+}
