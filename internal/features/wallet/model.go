@@ -14,7 +14,14 @@ type Wallet struct {
 	Icon                string
 	IsExcludedFromTotal bool
 	SortOrder           int
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	DeletedAt           sql.NullTime
+
+	// CurrentBalance dan TransactionCount tidak disimpan sebagai kolom, tapi
+	// dihitung dari transaksi setiap kali dibaca. Kolom saldo yang di-update
+	// manual adalah sumber bug nomor satu di aplikasi keuangan.
+	CurrentBalance   int
+	TransactionCount int
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt sql.NullTime
 }

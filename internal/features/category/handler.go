@@ -23,47 +23,30 @@ func (h *CategoryHandler) HandlerCategories(w http.ResponseWriter, r *http.Reque
 	case http.MethodGet:
 		ctx := r.Context()
 
-		limit := 10
-		offset := 0
-
-		strLimit := r.URL.Query().Get("limit")
-		strOffset := r.URL.Query().Get("offset")
-
-		if parsed, ok := queryparam.ToInt(strLimit); ok {
-			limit = parsed
-		}
-
-		if parsed, ok := queryparam.ToInt(strOffset); ok {
-			offset = parsed
-		}
-
-		if limit < 0 || offset < 0 {
+		limit, offset, ok := queryparam.Pagination(r.URL.Query().Get("limit"), r.URL.Query().Get("offset"), 10, 200)
+		if !ok {
 			response.WriteError(w, http.StatusBadRequest, "BAD_REQUEST", "limit dan offset tidak boleh negatif", nil)
 			return
 		}
 
-		categories, total, err := h.service.GetAllCategories(ctx, limit, offset)
+		catType := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("type")))
+		if catType != "" && !validator.IsOneOf(catType, "income", "expense") {
+			response.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "type harus income atau expense", map[string]string{"type": catType})
+			return
+		}
+
+		includeDeleted, _ := queryparam.ToBool(r.URL.Query().Get("include_deleted"))
+
+		categories, total, err := h.service.GetAllCategories(ctx, limit, offset, catType, includeDeleted)
 
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
 		resp := []CategoryResponse{}
 		for _, category := range categories {
-			c := CategoryResponse{
-				ID:        category.ID,
-				Name:      category.Name,
-				Type:      category.Type,
-				Color:     category.Color,
-				Icon:      category.Icon,
-				IsDefault: category.IsDefault,
-				SortOrder: category.SortOrder,
-				CreatedAt: category.CreatedAt,
-				UpdatedAt: category.UpdatedAt,
-			}
-			resp = append(resp, c)
+			resp = append(resp, NewCategoryResponse(category))
 		}
 
 		response.WriteSuccessWithMultipleData(w, http.StatusOK, resp, response.APIMeta{Total: total, Limit: limit, Offset: offset})
@@ -110,26 +93,12 @@ func (h *CategoryHandler) HandlerCategories(w http.ResponseWriter, r *http.Reque
 		}
 
 		category, err := h.service.CreateCategory(ctx, &reqBody)
-
-		res := CategoryResponse{
-			ID:        category.ID,
-			Name:      category.Name,
-			Type:      category.Type,
-			Color:     category.Color,
-			Icon:      category.Icon,
-			IsDefault: category.IsDefault,
-			SortOrder: category.SortOrder,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.CreatedAt,
-		}
-
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		response.WriteSuccessWithSingleData(w, http.StatusCreated, res)
+		response.WriteSuccessWithSingleData(w, http.StatusCreated, NewCategoryResponse(category))
 
 	default:
 		response.WriteError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
@@ -137,7 +106,7 @@ func (h *CategoryHandler) HandlerCategories(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *CategoryHandler) HandlerCategoryByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/category/")
+	id := r.PathValue("id")
 
 	if validator.IsEmptyString(id) {
 		response.WriteError(w, http.StatusBadRequest, "EMPTY_ID", "ID can't be empty!", nil)
@@ -208,94 +177,53 @@ func (h *CategoryHandler) HandlerCategoryByID(w http.ResponseWriter, r *http.Req
 
 		category, err := h.service.PatchCategory(ctx, id, &reqBody)
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := CategoryResponse{
-			ID:        category.ID,
-			Name:      category.Name,
-			Type:      category.Type,
-			Color:     category.Color,
-			Icon:      category.Icon,
-			IsDefault: category.IsDefault,
-			SortOrder: category.SortOrder,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-		}
-
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
+		response.WriteSuccessWithSingleData(w, http.StatusOK, NewCategoryResponse(category))
 
 	case http.MethodDelete:
-
 		ctx := r.Context()
-		category, err := h.service.DeleteCategory(ctx, id)
 
+		// Kategori default boleh dihapus. Seeding cuma jalan sekali lewat
+		// migration, jadi yang sudah dihapus tidak muncul lagi tiap restart.
+		category, err := h.service.DeleteCategory(ctx, id)
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := CategoryResponse{
-			ID:        category.ID,
-			Name:      category.Name,
-			Type:      category.Type,
-			Color:     category.Color,
-			Icon:      category.Icon,
-			IsDefault: category.IsDefault,
-			SortOrder: category.SortOrder,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-		}
+		response.WriteSuccessWithSingleData(w, http.StatusOK, NewCategoryResponse(category))
 
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
 	case http.MethodGet:
 		ctx := r.Context()
 		category, err := h.service.GetCategoryByID(ctx, id)
-
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := CategoryResponse{
-			ID:        category.ID,
-			Name:      category.Name,
-			Type:      category.Type,
-			Color:     category.Color,
-			Icon:      category.Icon,
-			IsDefault: category.IsDefault,
-			SortOrder: category.SortOrder,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-		}
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
-	case http.MethodPost:
-		ctx := r.Context()
-		category, err := h.service.RestoreCategory(ctx, id)
+		response.WriteSuccessWithSingleData(w, http.StatusOK, NewCategoryResponse(category))
 
-		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
-			return
-		}
-
-		resp := CategoryResponse{
-			ID:        category.ID,
-			Name:      category.Name,
-			Type:      category.Type,
-			Color:     category.Color,
-			Icon:      category.Icon,
-			IsDefault: category.IsDefault,
-			SortOrder: category.SortOrder,
-			CreatedAt: category.CreatedAt,
-			UpdatedAt: category.UpdatedAt,
-		}
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
 	default:
 		response.WriteError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
 	}
+}
+
+func (h *CategoryHandler) HandlerRestoreCategory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	if validator.IsEmptyString(id) {
+		response.WriteError(w, http.StatusBadRequest, "EMPTY_ID", "ID can't be empty!", nil)
+		return
+	}
+
+	category, err := h.service.RestoreCategory(r.Context(), id)
+	if err != nil {
+		response.WriteServiceError(w, err)
+		return
+	}
+
+	response.WriteSuccessWithSingleData(w, http.StatusOK, NewCategoryResponse(category))
 }

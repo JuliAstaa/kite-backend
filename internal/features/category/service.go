@@ -4,7 +4,7 @@ import "context"
 
 type CategoryServicer interface {
 	CreateCategory(ctx context.Context, requestBody *CreateCategoryRequest) (Category, error)
-	GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error)
+	GetAllCategories(ctx context.Context, limit int, offset int, catType string, includeDeleted bool) ([]Category, int, error)
 	PatchCategory(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error)
 	DeleteCategory(ctx context.Context, id string) (Category, error)
 	GetCategoryByID(ctx context.Context, id string) (Category, error)
@@ -23,8 +23,8 @@ func (s *CategoryService) CreateCategory(ctx context.Context, requestBody *Creat
 	return s.repo.CreateCategory(ctx, requestBody.Name, requestBody.Type, requestBody.Color, requestBody.Icon)
 }
 
-func (s *CategoryService) GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error) {
-	return s.repo.GetAllCategories(ctx, limit, offset)
+func (s *CategoryService) GetAllCategories(ctx context.Context, limit int, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
+	return s.repo.GetAllCategories(ctx, limit, offset, catType, includeDeleted)
 }
 
 func (s *CategoryService) PatchCategory(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error) {
@@ -38,6 +38,7 @@ func (s *CategoryService) DeleteCategory(ctx context.Context, id string) (Catego
 func (s *CategoryService) GetCategoryByID(ctx context.Context, id string) (Category, error) {
 	return s.repo.GetCategoryByID(ctx, id)
 }
+
 func (s *CategoryService) RestoreCategory(ctx context.Context, id string) (Category, error) {
 	return s.repo.RestoreCategory(ctx, id)
 }

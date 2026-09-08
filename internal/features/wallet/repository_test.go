@@ -4,23 +4,58 @@ import (
 	"backend/internal/shared/apperror"
 	"backend/internal/shared/testutil"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
 )
 
+var testDB *sql.DB
+
 var walletRepoTest *WalletRepository
 
 func TestMain(m *testing.M) {
-	db := testutil.ConnectTestDB("../../../.env")
-	walletRepoTest = NewWalletRepository(db)
+	// Test repository di-skip kalau database test tidak tersedia, supaya
+	// test handler dan service di package ini tetap bisa jalan.
+	testDB = testutil.TryConnectTestDB("../../../.env")
+
+	// Kunci dipegang selama package ini jalan, supaya package lain yang
+	// dijalankan barengan oleh `go test ./...` tidak ikut mengubah tabel
+	// yang sama di tengah test.
+	var unlock func()
+	if testDB != nil {
+		release, err := testutil.LockTestDB(testDB)
+		if err != nil {
+			log.Printf("gagal mengunci database test, test repository di-skip: %v", err)
+			testDB.Close()
+			testDB = nil
+		} else {
+			unlock = release
+			walletRepoTest = NewWalletRepository(testDB)
+		}
+	}
+
 	code := m.Run()
+
+	if unlock != nil {
+		unlock()
+	}
+	if testDB != nil {
+		testDB.Close()
+	}
 	os.Exit(code)
 }
 
 func resetTable(t *testing.T) {
+	t.Helper()
+
+	if testDB == nil {
+		t.Skip("database test tidak tersedia, test repository di-skip")
+	}
+
 	if _, err := walletRepoTest.db.Exec(`TRUNCATE wallets CASCADE`); err != nil {
 		t.Error(err)
 	}
@@ -127,7 +162,7 @@ func TestGetAllWallets(t *testing.T) {
 			walletRepoTest.CreateWallet(ctx, fmt.Sprintf("wallet ke-%d", i), "bank", 40000, "#ffffff", "inicon", false)
 		}
 
-		wallets, total, err := walletRepoTest.GetAllWallets(ctx, 3, 0)
+		wallets, total, err := walletRepoTest.GetAllWallets(ctx, 3, 0, false)
 
 		if err != nil {
 			t.Fatalf("error: %v", err)
@@ -150,9 +185,12 @@ func TestGetAllWallets(t *testing.T) {
 			walletRepoTest.CreateWallet(ctx, fmt.Sprintf("wallet ke-%d", i), "bank", 40000, "#ffffff", "inicon", false)
 		}
 
-		wallets, _, err := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, _, err := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 		if err != nil {
 			t.Fatalf("error: %v", err)
+		}
+		if len(wallets) != 5 {
+			t.Fatalf("dapat %d wallet, mau 5", len(wallets))
 		}
 
 		_, err = walletRepoTest.DeleteWallet(ctx, wallets[0].ID)
@@ -160,7 +198,7 @@ func TestGetAllWallets(t *testing.T) {
 			t.Errorf("error: %v", err)
 		}
 
-		wallets, total, err := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, total, err := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
@@ -178,7 +216,7 @@ func TestGetAllWallets(t *testing.T) {
 	t.Run("kosong", func(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
-		wallets, total, err := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, total, err := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -218,7 +256,7 @@ func TestPatchWallet(t *testing.T) {
 			resetTable(t)
 			ctx := context.Background()
 			walletRepoTest.CreateWallet(ctx, "wallet", "bank", 50000, "#ffffff", "iniicon", false)
-			wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0)
+			wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 			timeBeforeUpdated := wallets[0].UpdatedAt
 
 			updatedWallet, err := walletRepoTest.PatchWallet(ctx, wallets[0].ID, &tt.walletName, &tt.walletType, &tt.initialBalancae, &tt.color, &tt.icon, &tt.isExcludedFromTotal)
@@ -262,7 +300,7 @@ func TestPatchWallet(t *testing.T) {
 		walletRepoTest.CreateWallet(ctx, "wallet", "bank", 50000, "#ffffff", "iniicon", false)
 		walletRepoTest.CreateWallet(ctx, "cash", "cash", 50000, "#ffffff", "iniicon", false)
 
-		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 
 		newName := "cash"
 		newType := "cash"
@@ -291,14 +329,14 @@ func TestDeleteWallet(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		walletRepoTest.CreateWallet(ctx, "wallet", "bank", 50000, "#ffffff", "iniicon", false)
-		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 
 		wallet, err := walletRepoTest.DeleteWallet(ctx, wallets[0].ID)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
 
-		wallets, total, _ := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, total, _ := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 		if !wallet.DeletedAt.Valid {
 			t.Errorf("deleted_at masih null, mau now()")
 		}
@@ -328,7 +366,7 @@ func TestGetWalletByIDRepository(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		walletRepoTest.CreateWallet(ctx, "wallet", "bank", 50000, "#ffffff", "iniicon", false)
-		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 
 		wallet, err := walletRepoTest.GetWalletByID(ctx, wallets[0].ID)
 		if err != nil {
@@ -362,7 +400,7 @@ func TestRestoreWalletRepository(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		walletRepoTest.CreateWallet(ctx, "wallet", "bank", 50000, "#ffffff", "iniicon", false)
-		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0)
+		wallets, _, _ := walletRepoTest.GetAllWallets(ctx, 10, 0, false)
 
 		deletedWallet, err := walletRepoTest.DeleteWallet(ctx, wallets[0].ID)
 		if err != nil {

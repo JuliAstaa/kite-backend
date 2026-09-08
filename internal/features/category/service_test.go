@@ -10,7 +10,7 @@ import (
 
 type FakeCategoryRepository struct {
 	CreateCategoryFunc   func(ctx context.Context, name string, catType string, color string, icon string) (Category, error)
-	GetAllCategoriesFunc func(ctx context.Context, limit int, offset int) ([]Category, int, error)
+	GetAllCategoriesFunc func(ctx context.Context, limit int, offset int, catType string, includeDeleted bool) ([]Category, int, error)
 	PatchCategoryFunc    func(ctx context.Context, id string, name *string, catType *string, color *string, icon *string) (Category, error)
 	DeleteCategoryFunc   func(ctx context.Context, id string) (Category, error)
 	GetCategoryByIDFunc  func(ctx context.Context, id string) (Category, error)
@@ -21,8 +21,8 @@ func (f *FakeCategoryRepository) CreateCategory(ctx context.Context, name string
 	return f.CreateCategoryFunc(ctx, name, catType, color, icon)
 }
 
-func (f *FakeCategoryRepository) GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error) {
-	return f.GetAllCategoriesFunc(ctx, limit, offset)
+func (f *FakeCategoryRepository) GetAllCategories(ctx context.Context, limit int, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
+	return f.GetAllCategoriesFunc(ctx, limit, offset, catType, includeDeleted)
 }
 
 func (f *FakeCategoryRepository) PatchCategory(ctx context.Context, id string, name *string, catType *string, color *string, icon *string) (Category, error) {
@@ -114,14 +114,14 @@ func TestGetAllCategoryService(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
 		fakeRepo := &FakeCategoryRepository{
-			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int) ([]Category, int, error) {
+			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
 				return []Category{{Name: "ini ketogori"}}, 1, nil
 			},
 		}
 
 		serviceTest := NewCategoryService(fakeRepo)
 
-		categories, total, err := serviceTest.GetAllCategories(ctx, 10, 0)
+		categories, total, err := serviceTest.GetAllCategories(ctx, 10, 0, "", false)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -138,14 +138,14 @@ func TestGetAllCategoryService(t *testing.T) {
 	t.Run("forward error", func(t *testing.T) {
 		ctx := context.Background()
 		fakeRepo := &FakeCategoryRepository{
-			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int) ([]Category, int, error) {
+			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
 				return nil, 0, errors.New("error DB")
 			},
 		}
 
 		serviceTest := NewCategoryService(fakeRepo)
 
-		_, _, err := serviceTest.GetAllCategories(ctx, 10, 0)
+		_, _, err := serviceTest.GetAllCategories(ctx, 10, 0, "", false)
 		if err == nil {
 			t.Error("harusnya error DB, tetapi tidak dapat")
 		}

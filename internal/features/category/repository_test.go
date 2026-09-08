@@ -4,25 +4,58 @@ import (
 	"backend/internal/shared/apperror"
 	"backend/internal/shared/testutil"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
 )
 
+var testDB *sql.DB
+
 var categoryRepoTest *CategoryRepository
 
 func TestMain(m *testing.M) {
-	db := testutil.ConnectTestDB("../../../.env")
+	// Test repository di-skip kalau database test tidak tersedia, supaya
+	// test handler dan service di package ini tetap bisa jalan.
+	testDB = testutil.TryConnectTestDB("../../../.env")
 
-	categoryRepoTest = NewCategoryRepository(db)
+	// Kunci dipegang selama package ini jalan, supaya package lain yang
+	// dijalankan barengan oleh `go test ./...` tidak ikut mengubah tabel
+	// yang sama di tengah test.
+	var unlock func()
+	if testDB != nil {
+		release, err := testutil.LockTestDB(testDB)
+		if err != nil {
+			log.Printf("gagal mengunci database test, test repository di-skip: %v", err)
+			testDB.Close()
+			testDB = nil
+		} else {
+			unlock = release
+			categoryRepoTest = NewCategoryRepository(testDB)
+		}
+	}
 
 	code := m.Run()
+
+	if unlock != nil {
+		unlock()
+	}
+	if testDB != nil {
+		testDB.Close()
+	}
 	os.Exit(code)
 }
 
 func resetTable(t *testing.T) {
+	t.Helper()
+
+	if testDB == nil {
+		t.Skip("database test tidak tersedia, test repository di-skip")
+	}
+
 	if _, err := categoryRepoTest.db.Exec("TRUNCATE categories CASCADE"); err != nil {
 		t.Error(err)
 	}
@@ -105,7 +138,7 @@ func TestGetAllCategories(t *testing.T) {
 			categoryRepoTest.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
 		}
 
-		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 2, 0)
+		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 2, 0, "", false)
 
 		if err != nil {
 			t.Error(err)
@@ -128,7 +161,7 @@ func TestGetAllCategories(t *testing.T) {
 			categoryRepoTest.CreateCategory(ctx, fmt.Sprintf("category %d", i), "expense", "#ffffff", "icon.jpeg")
 		}
 
-		categories, _, err := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, _, err := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
@@ -139,7 +172,7 @@ func TestGetAllCategories(t *testing.T) {
 			t.Errorf("error: %v", err)
 		}
 
-		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
@@ -157,7 +190,7 @@ func TestGetAllCategories(t *testing.T) {
 	t.Run("kosong", func(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
-		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, total, err := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
@@ -192,7 +225,7 @@ func TestPatchCategory(t *testing.T) {
 			resetTable(t)
 			ctx := context.Background()
 			categoryRepoTest.CreateCategory(ctx, "kategori 1", "expense", "#ff44ff", "iniicon")
-			categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+			categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 			timeBeforeUpdated := categories[0].UpdatedAt
 
 			updatedCategory, err := categoryRepoTest.PatchCategory(ctx, categories[0].ID, &tt.catName, &tt.catType, &tt.catColor, &tt.catIcon)
@@ -231,7 +264,7 @@ func TestPatchCategory(t *testing.T) {
 		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
 		categoryRepoTest.CreateCategory(ctx, "minum", "expense", "#ffffff", "iniicon")
 
-		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 
 		newName := "minum"
 		newType := "expense"
@@ -250,7 +283,7 @@ func TestPatchCategory(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
-		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 
 		newType := "lainnya"
 
@@ -278,13 +311,13 @@ func TestDeleteCategory(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
-		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 
 		category, err := categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
 		if err != nil {
 			t.Errorf("error: %v", err)
 		}
-		categories, total, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, total, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 
 		if !category.DeletedAt.Valid {
 			t.Errorf("deleted at masih null, mau isi")
@@ -317,7 +350,7 @@ func TestGetCategoryByIDRepository(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
-		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 
 		category, err := categoryRepoTest.GetCategoryByID(ctx, categories[0].ID)
 
@@ -352,7 +385,7 @@ func TestRestoreCategoryRepository(t *testing.T) {
 		resetTable(t)
 		ctx := context.Background()
 		categoryRepoTest.CreateCategory(ctx, "makan", "expense", "#ffffff", "iniicon")
-		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0)
+		categories, _, _ := categoryRepoTest.GetAllCategories(ctx, 10, 0, "", false)
 
 		deletedCatgory, err := categoryRepoTest.DeleteCategory(ctx, categories[0].ID)
 		category, err := categoryRepoTest.RestoreCategory(ctx, deletedCatgory.ID)

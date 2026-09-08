@@ -11,20 +11,28 @@ import (
 
 type FakeWalletService struct {
 	CreateWalletFunc  func(ctx context.Context, reqBody *CreateWalletRequest) (Wallet, error)
-	GetAllWalletsFunc func(ctx context.Context, limit int, offset int) ([]Wallet, int, error)
+	GetAllWalletsFunc func(ctx context.Context, limit int, offset int, includeDeleted bool) ([]Wallet, int, error)
 	PatchWalletFunc   func(ctx context.Context, id string, reqBody *PatchWalletRequest) (Wallet, error)
 	GetWalletByIDFunc func(ctx context.Context, id string) (Wallet, error)
 	DeleteWalletFunc  func(ctx context.Context, id string) (Wallet, error)
 	RestoreWalletFunc func(ctx context.Context, id string) (Wallet, error)
 	IsWalletExistFunc func(ctx context.Context, id string) error
+	TotalBalanceFunc  func(ctx context.Context) (int, error)
 }
 
 func (h *FakeWalletService) CreateWallet(ctx context.Context, reqBody *CreateWalletRequest) (Wallet, error) {
 	return h.CreateWalletFunc(ctx, reqBody)
 }
 
-func (h *FakeWalletService) GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error) {
-	return h.GetAllWalletsFunc(ctx, limit, offset)
+func (h *FakeWalletService) GetAllWallets(ctx context.Context, limit int, offset int, includeDeleted bool) ([]Wallet, int, error) {
+	return h.GetAllWalletsFunc(ctx, limit, offset, includeDeleted)
+}
+
+func (h *FakeWalletService) TotalBalance(ctx context.Context) (int, error) {
+	if h.TotalBalanceFunc == nil {
+		return 0, nil
+	}
+	return h.TotalBalanceFunc(ctx)
 }
 
 func (h *FakeWalletService) PatchWallet(ctx context.Context, id string, reqBody *PatchWalletRequest) (Wallet, error) {
@@ -106,7 +114,7 @@ func TestGetAllWalletsHandler(t *testing.T) {
 	t.Run("success without param", func(t *testing.T) {
 		var getLimit, getOffset int
 		fakeService := &FakeWalletService{
-			GetAllWalletsFunc: func(ctx context.Context, limit, offset int) ([]Wallet, int, error) {
+			GetAllWalletsFunc: func(ctx context.Context, limit, offset int, includeDeleted bool) ([]Wallet, int, error) {
 				getLimit = limit
 				getOffset = offset
 				return []Wallet{{Name: "wallet"}}, 1, nil
@@ -136,7 +144,7 @@ func TestGetAllWalletsHandler(t *testing.T) {
 	t.Run("success with valid param", func(t *testing.T) {
 		var getLimit, getOffset int
 		fakeService := &FakeWalletService{
-			GetAllWalletsFunc: func(ctx context.Context, limit, offset int) ([]Wallet, int, error) {
+			GetAllWalletsFunc: func(ctx context.Context, limit, offset int, includeDeleted bool) ([]Wallet, int, error) {
 				getLimit = limit
 				getOffset = offset
 				return []Wallet{{Name: "wallet"}}, 1, nil
@@ -166,7 +174,7 @@ func TestGetAllWalletsHandler(t *testing.T) {
 	t.Run("success with invalid param", func(t *testing.T) {
 		var getLimit, getOffset int
 		fakeService := &FakeWalletService{
-			GetAllWalletsFunc: func(ctx context.Context, limit, offset int) ([]Wallet, int, error) {
+			GetAllWalletsFunc: func(ctx context.Context, limit, offset int, includeDeleted bool) ([]Wallet, int, error) {
 				getLimit = limit
 				getOffset = offset
 				return []Wallet{{Name: "wallet"}}, 1, nil
@@ -220,6 +228,7 @@ func TestPatchWalletHandler(t *testing.T) {
 			h := NewWalletHandler(fakeService)
 
 			req := httptest.NewRequest(http.MethodPatch, "/wallets/some-id", strings.NewReader(tt.body))
+			req.SetPathValue("id", "some-id")
 			rec := httptest.NewRecorder()
 
 			h.HandlerWalletByID(rec, req)
@@ -240,6 +249,7 @@ func TestPatchWalletHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 		body := `{"name":"new wallet", "type":"bank", "initial_balance":50000, "color":"#ffffff", "icon":"wallet", "is_excluded_from_total":false}`
 		req := httptest.NewRequest(http.MethodPatch, "/wallets/some-id", strings.NewReader(body))
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerWalletByID(rec, req)
@@ -258,6 +268,7 @@ func TestPatchWalletHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 		body := `{"name":"new wallet", "type":"bank", "initial_balance":50000, "color":"#ffffff", "icon":"wallet", "is_excluded_from_total":false}`
 		req := httptest.NewRequest(http.MethodPatch, "/wallets/some-id", strings.NewReader(body))
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerWalletByID(rec, req)
@@ -279,6 +290,7 @@ func TestGetWalletByIDHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 
 		req := httptest.NewRequest(http.MethodGet, "/wallets/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerWalletByID(rec, req)
@@ -298,6 +310,7 @@ func TestGetWalletByIDHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 
 		req := httptest.NewRequest(http.MethodGet, "/wallets/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerWalletByID(rec, req)
@@ -319,6 +332,7 @@ func TestDeleteWalletHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 
 		req := httptest.NewRequest(http.MethodDelete, "/wallets/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerWalletByID(rec, req)
@@ -338,6 +352,7 @@ func TestDeleteWalletHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 
 		req := httptest.NewRequest(http.MethodDelete, "/wallets/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerWalletByID(rec, req)
@@ -358,9 +373,10 @@ func TestRestoreWalletHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 
 		req := httptest.NewRequest(http.MethodPost, "/wallets/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
-		h.HandlerWalletByID(rec, req)
+		h.HandlerRestoreWallet(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("status %d, want %d", rec.Code, http.StatusOK)
@@ -376,9 +392,10 @@ func TestRestoreWalletHandler(t *testing.T) {
 		h := NewWalletHandler(fakeService)
 
 		req := httptest.NewRequest(http.MethodPost, "/wallets/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
-		h.HandlerWalletByID(rec, req)
+		h.HandlerRestoreWallet(rec, req)
 
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("status %d, want %d", rec.Code, http.StatusNotFound)

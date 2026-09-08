@@ -31,3 +31,19 @@ type ValidationError struct {
 func (e ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
+
+// ConflictError dipakai saat request bentrok dengan keadaan data sekarang,
+// misalnya budget aktif kedua untuk kategori yang sama.
+type ConflictError struct {
+	Message string
+}
+
+func (e ConflictError) Error() string { return e.Message }
+
+// UnprocessableError dipakai saat request-nya valid secara bentuk tapi tidak
+// bisa dijalankan, misalnya membeli item wishlist yang sudah berstatus purchased.
+type UnprocessableError struct {
+	Message string
+}
+
+func (e UnprocessableError) Error() string { return e.Message }

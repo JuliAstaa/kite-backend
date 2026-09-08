@@ -10,7 +10,7 @@ import (
 type APIError struct {
 	Code    string            `json:"code"`
 	Message string            `json:"message"`
-	Detail  map[string]string `json:"detail,omitempty"`
+	Details map[string]string `json:"details,omitempty"`
 }
 
 type ErrorResponse struct {
@@ -38,16 +38,29 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func WriteError(w http.ResponseWriter, status int, code string, message string, detail map[string]string) {
-	writeJSON(w, status, APIError{
+func WriteError(w http.ResponseWriter, status int, code string, message string, details map[string]string) {
+	writeJSON(w, status, ErrorResponse{Error: APIError{
 		Code:    code,
 		Message: message,
-		Detail:  detail,
-	})
+		Details: details,
+	}})
+}
+
+// WriteServiceError memetakan error dari service ke status dan kode HTTP.
+// ValidationError ikut membawa nama field-nya ke details.
+func WriteServiceError(w http.ResponseWriter, err error) {
+	var ve apperror.ValidationError
+	if errors.As(err, &ve) {
+		WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", ve.Message, map[string]string{ve.Field: ve.Message})
+		return
+	}
+
+	status, code := StatusFromError(err)
+	WriteError(w, status, code, err.Error(), nil)
 }
 
 func WriteSuccessWithSingleData(w http.ResponseWriter, status int, data any) {
-	writeJSON(w, status, data)
+	writeJSON(w, status, SingleDataResponse{Data: data})
 }
 
 func WriteSuccessWithMultipleData(w http.ResponseWriter, status int, data any, meta APIMeta) {
@@ -62,13 +75,18 @@ func WriteSuccessWithMultipleData(w http.ResponseWriter, status int, data any, m
 }
 
 func WriteSuccessNoData(w http.ResponseWriter, status int) {
-	writeJSON(w, status, nil)
+	w.WriteHeader(status)
 }
 
 func StatusFromError(err error) (int, string) {
 	var ae apperror.AlreadyExistsErr
 	if errors.As(err, &ae) {
-		return http.StatusConflict, "ALREADY_EXIST"
+		return http.StatusConflict, "CONFLICT"
+	}
+
+	var ce apperror.ConflictError
+	if errors.As(err, &ce) {
+		return http.StatusConflict, "CONFLICT"
 	}
 
 	var ve apperror.ValidationError
@@ -76,10 +94,15 @@ func StatusFromError(err error) (int, string) {
 		return http.StatusBadRequest, "VALIDATION_ERROR"
 	}
 
+	var ue apperror.UnprocessableError
+	if errors.As(err, &ue) {
+		return http.StatusUnprocessableEntity, "UNPROCESSABLE"
+	}
+
 	var nf apperror.NotFoundError
 	if errors.As(err, &nf) {
 		return http.StatusNotFound, "NOT_FOUND"
 	}
 
-	return http.StatusInternalServerError, "INTERNAL_SERVER_ERROR"
+	return http.StatusInternalServerError, "INTERNAL_ERROR"
 }

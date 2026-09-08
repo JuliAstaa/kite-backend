@@ -1,0 +1,1195 @@
+<title>Kite Finance API — Dokumentasi Frontend</title>
+<style>
+  /* ---- Tokens: light adalah keadaan dasar ---- */
+  :root {
+    --ground:      #F5F8F6;
+    --surface:     #FFFFFF;
+    --surface-alt: #EDF2EF;
+    --ink:         #10201B;
+    --ink-soft:    #4C5F58;
+    --ink-faint:   #788B83;
+    --rule:        #D9E3DE;
+    --rule-strong: #BECBC5;
+    --accent:      #0E6B4E;
+    --accent-ink:  #0B5540;
+    --accent-wash: #E2EFE9;
+
+    --get:    #1D5FA8;  --get-wash:    #E2ECF7;
+    --post:   #0E6B4E;  --post-wash:   #E2EFE9;
+    --patch:  #8A5A05;  --patch-wash:  #F7EEDC;
+    --delete: #A62F32;  --delete-wash: #F8E5E5;
+
+    --warn:      #8A5A05;
+    --warn-wash: #FBF3E3;
+    --warn-rule: #E5CFA0;
+
+    --shadow: 0 1px 2px rgba(16, 32, 27, .05), 0 8px 24px -16px rgba(16, 32, 27, .18);
+
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans:  system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0C1512;
+      --surface:     #121D19;
+      --surface-alt: #172621;
+      --ink:         #E4EDE8;
+      --ink-soft:    #9DAFA8;
+      --ink-faint:   #7A8C85;
+      --rule:        #223229;
+      --rule-strong: #33473D;
+      --accent:      #4FC094;
+      --accent-ink:  #6FD1AA;
+      --accent-wash: #14291F;
+
+      --get:    #7FB3EA;  --get-wash:    #16263A;
+      --post:   #4FC094;  --post-wash:   #14291F;
+      --patch:  #D9A94F;  --patch-wash:  #2E2413;
+      --delete: #E98A8C;  --delete-wash: #2E1A1B;
+
+      --warn:      #D9A94F;
+      --warn-wash: #251D0F;
+      --warn-rule: #4A3A18;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0C1512;
+    --surface:     #121D19;
+    --surface-alt: #172621;
+    --ink:         #E4EDE8;
+    --ink-soft:    #9DAFA8;
+    --ink-faint:   #7A8C85;
+    --rule:        #223229;
+    --rule-strong: #33473D;
+    --accent:      #4FC094;
+    --accent-ink:  #6FD1AA;
+    --accent-wash: #14291F;
+
+    --get:    #7FB3EA;  --get-wash:    #16263A;
+    --post:   #4FC094;  --post-wash:   #14291F;
+    --patch:  #D9A94F;  --patch-wash:  #2E2413;
+    --delete: #E98A8C;  --delete-wash: #2E1A1B;
+
+    --warn:      #D9A94F;
+    --warn-wash: #251D0F;
+    --warn-rule: #4A3A18;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Kerangka halaman ---- */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .masthead-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 32px 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 24px 40px;
+  }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 4.5vw, 40px);
+    font-weight: 600;
+    letter-spacing: -.015em;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 0;
+    flex: 1 1 380px;
+  }
+  .masthead h1 span { color: var(--accent); }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    margin: 0;
+  }
+  .facts div { display: flex; flex-direction: column; gap: 2px; }
+  .facts dt {
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .facts dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px 96px;
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+
+  /* ---- Daftar isi ---- */
+  .toc {
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 40px 0;
+  }
+  .toc-label {
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 12px;
+  }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+  .toc a {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 6px;
+    padding: 4px 8px 4px 0;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 13.5px;
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+    border-radius: 0 3px 3px 0;
+  }
+  .toc a:hover { color: var(--ink); background: var(--surface-alt); }
+  .toc a .num { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); padding-top: 2px; }
+  .toc a.on { color: var(--accent-ink); border-left-color: var(--accent); font-weight: 600; }
+  .toc a.on .num { color: var(--accent); }
+  .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- Isi ---- */
+  main { padding: 40px 0 0; min-width: 0; }
+  section { scroll-margin-top: 24px; padding-bottom: 8px; }
+  section + section { margin-top: 56px; padding-top: 48px; border-top: 1px solid var(--rule); }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.2;
+    margin: 0 0 20px;
+    text-wrap: balance;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: baseline;
+  }
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: .01em;
+    margin: 32px 0 12px;
+  }
+
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol.body-list { margin: 0 0 16px; padding-left: 20px; max-width: 68ch; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--ink-faint); }
+  strong { font-weight: 650; }
+  a { color: var(--accent-ink); }
+
+  code {
+    font-family: var(--mono);
+    font-size: .875em;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: .08em .34em;
+  }
+  pre {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  /* ---- Daftar endpoint ---- */
+  .routes {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0 0 20px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .route {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 14px;
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .verb {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: center;
+  }
+  .verb.get    { color: var(--get);    background: var(--get-wash); }
+  .verb.post   { color: var(--post);   background: var(--post-wash); }
+  .verb.patch  { color: var(--patch);  background: var(--patch-wash); }
+  .verb.delete { color: var(--delete); background: var(--delete-wash); }
+  .route .path { font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+  .route .note { font-size: 12.5px; color: var(--ink-faint); margin-left: auto; }
+
+  /* ---- Tabel ---- */
+  .scroll { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--rule); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-size: 11px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td code { white-space: nowrap; }
+  .num-col { font-variant-numeric: tabular-nums; }
+
+  /* ---- Callout ---- */
+  .note-box {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 0 0 20px;
+  }
+  .note-box.warn { border-left-color: var(--warn); background: var(--warn-wash); border-color: var(--warn-rule); }
+  .note-box p:last-child, .note-box ul:last-child { margin-bottom: 0; }
+  .note-box .tag {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin-bottom: 6px;
+    font-weight: 650;
+  }
+  .note-box.warn .tag { color: var(--warn); }
+
+  footer {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 32px 64px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-size: 13.5px;
+  }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 22px 72px; }
+    .masthead-inner { padding: 28px 22px 24px; }
+    .toc {
+      position: static;
+      max-height: none;
+      padding: 28px 0 0;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 24px;
+    }
+    .toc ol { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px 16px; }
+    footer { padding: 28px 22px 56px; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <h1>Kite Finance API<br><span>Dokumentasi Frontend</span></h1>
+    <dl class="facts">
+      <div><dt>Versi</dt><dd>2.0.0</dd></div>
+      <div><dt>Base path</dt><dd>/api/v1</dd></div>
+      <div><dt>Format</dt><dd>JSON</dd></div>
+      <div><dt>Zona waktu</dt><dd>WITA (UTC+8)</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Daftar isi">
+    <p class="toc-label">Daftar isi</p>
+    <ol>
+      <li><a href="#s1"><span class="num">01</span><span>Autentikasi</span></a></li>
+      <li><a href="#s2"><span class="num">02</span><span>CORS</span></a></li>
+      <li><a href="#s3"><span class="num">03</span><span>Bentuk response</span></a></li>
+      <li><a href="#s4"><span class="num">04</span><span>Aturan umum</span></a></li>
+      <li><a href="#s5"><span class="num">05</span><span>Health</span></a></li>
+      <li><a href="#s6"><span class="num">06</span><span>Wallets</span></a></li>
+      <li><a href="#s7"><span class="num">07</span><span>Categories</span></a></li>
+      <li><a href="#s8"><span class="num">08</span><span>Transactions</span></a></li>
+      <li><a href="#s9"><span class="num">09</span><span>Summary</span></a></li>
+      <li><a href="#s10"><span class="num">10</span><span>Analytics</span></a></li>
+      <li><a href="#s11"><span class="num">11</span><span>Savings</span></a></li>
+      <li><a href="#s12"><span class="num">12</span><span>Wishlist</span></a></li>
+      <li><a href="#s13"><span class="num">13</span><span>Budgets</span></a></li>
+      <li><a href="#s14"><span class="num">14</span><span>Recurring</span></a></li>
+      <li><a href="#s15"><span class="num">15</span><span>Quick adds</span></a></li>
+      <li><a href="#s16"><span class="num">16</span><span>Export &amp; import</span></a></li>
+      <li><a href="#s17"><span class="num">17</span><span>Catatan praktis</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="s1">
+      <h2><span class="num">01</span>Autentikasi</h2>
+      <p>Semua endpoint butuh header berikut, termasuk <code>/health</code>:</p>
+      <pre><code>X-API-Token: &lt;token&gt;</code></pre>
+
+      <div class="note-box warn">
+        <span class="tag">Penting</span>
+        <p>Token dikirim terpisah, tidak ada di repo dan tidak ada di dokumen ini. Simpan di environment variable frontend, jangan di-hardcode di source dan jangan di-commit.</p>
+      </div>
+
+      <p>Token salah atau tidak dikirim:</p>
+      <pre><code>HTTP 401
+{ "error": { "code": "UNAUTHORIZED", "message": "X-API-Token tidak valid" } }</code></pre>
+
+      <p>Request <code>OPTIONS</code> (preflight CORS) tidak butuh token.</p>
+
+      <div class="note-box">
+        <p>Kalau backend dijalankan tanpa <code>API_TOKEN</code>, pengecekan token mati total dan semua request lolos. Berguna saat development lokal.</p>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2><span class="num">02</span>CORS</h2>
+      <p>Origin yang diizinkan diatur di backend lewat <code>CORS_ALLOWED_ORIGINS</code>, default <code>http://localhost:5173</code>. Kalau origin frontend berbeda — port lain, domain deploy — minta backend menambahkannya. Ini bukan sesuatu yang bisa diakali dari sisi frontend.</p>
+      <div class="scroll">
+        <table>
+          <tbody>
+            <tr><td><strong>Header diizinkan</strong></td><td><code>Content-Type</code>, <code>X-API-Token</code></td></tr>
+            <tr><td><strong>Method diizinkan</strong></td><td><code>GET</code>, <code>POST</code>, <code>PATCH</code>, <code>DELETE</code>, <code>OPTIONS</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s3">
+      <h2><span class="num">03</span>Bentuk response</h2>
+
+      <h3>Satu resource</h3>
+      <pre><code>{ "data": { "id": "0192...", "name": "BCA" } }</code></pre>
+
+      <h3>Daftar dengan pagination</h3>
+      <pre><code>{
+  "data": [ ... ],
+  "meta": { "total": 248, "limit": 50, "offset": 0 }
+}</code></pre>
+      <p>Yang punya <code>meta</code>: wallets, categories, transactions, wishlist, budgets, recurring, quick-adds, savings targets. Empat yang terakhir tidak menerima <code>limit</code>/<code>offset</code> dan selalu mengembalikan seluruh data — <code>meta.total</code> tetap diisi, <code>meta.limit</code> disamakan dengan total.</p>
+
+      <h3>Daftar tanpa <code>meta</code></h3>
+      <p><code>data</code> langsung berupa array. Berlaku untuk seluruh endpoint analytics, <code>budgets/status</code>, <code>savings/breakdown</code>, dan <code>wishlist/summary</code>.</p>
+
+      <h3>Error</h3>
+      <pre><code>{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "amount harus lebih besar dari 0",
+    "details": { "amount": "amount harus lebih besar dari 0" }
+  }
+}</code></pre>
+      <p><code>details</code> bersifat opsional dan berisi peta <code>nama_field → pesan</code>. Cocok dipakai langsung untuk menampilkan error di bawah input form.</p>
+
+      <h3>Kode error</h3>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Kode</th><th class="num-col">HTTP</th><th>Kapan muncul</th></tr></thead>
+          <tbody>
+            <tr><td><code>VALIDATION_ERROR</code></td><td class="num-col">400</td><td>Field kosong, format salah, atau melanggar aturan bisnis</td></tr>
+            <tr><td><code>INVALID_JSON</code></td><td class="num-col">400</td><td>Body bukan JSON yang valid</td></tr>
+            <tr><td><code>UNAUTHORIZED</code></td><td class="num-col">401</td><td><code>X-API-Token</code> salah atau tidak dikirim</td></tr>
+            <tr><td><code>NOT_FOUND</code></td><td class="num-col">404</td><td>ID tidak ada, atau resource sudah dihapus</td></tr>
+            <tr><td><code>METHOD_NOT_ALLOWED</code></td><td class="num-col">405</td><td>Method tidak didukung di path tersebut</td></tr>
+            <tr><td><code>CONFLICT</code></td><td class="num-col">409</td><td>Bentrok dengan data yang ada</td></tr>
+            <tr><td><code>UNPROCESSABLE</code></td><td class="num-col">422</td><td>Request valid tapi tidak bisa dijalankan pada keadaan sekarang</td></tr>
+            <tr><td><code>INTERNAL_ERROR</code></td><td class="num-col">500</td><td>Kesalahan server</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Beda <code>VALIDATION_ERROR</code> dan <code>UNPROCESSABLE</code>: yang pertama berarti input perlu diperbaiki, yang kedua berarti input sudah benar tapi state-nya tidak mengizinkan — misalnya mengalokasikan dana ke wishlist yang sudah dibeli.</p>
+    </section>
+
+    <section id="s4">
+      <h2><span class="num">04</span>Aturan umum</h2>
+
+      <div class="note-box warn">
+        <span class="tag">Uang</span>
+        <p>Selalu bilangan bulat Rupiah penuh. <code>25000</code> berarti Rp 25.000. Tidak ada desimal, tidak ada string. Jangan pakai <code>parseFloat</code>.</p>
+      </div>
+
+      <p><strong>Zona waktu aplikasi WITA</strong> (<code>Asia/Makassar</code>, UTC+8). Timestamp dikembalikan dalam RFC3339 dengan offset, misal <code>2026-09-07T09:30:00+08:00</code>. Field yang hanya berupa tanggal memakai string <code>YYYY-MM-DD</code>.</p>
+
+      <p><strong>Filter tanggal inklusif di dua ujung.</strong> <code>from=2026-08-01&amp;to=2026-08-31</code> mencakup seluruh 31 Agustus sampai jam 23:59:59.</p>
+
+      <h3>Soft delete</h3>
+      <p>Data yang dihapus tidak hilang, hanya ditandai. Konsekuensinya untuk frontend:</p>
+      <ul>
+        <li>Response punya field <code>deleted_at</code> (<code>null</code> kalau masih aktif)</li>
+        <li>List punya query param <code>include_deleted=true</code></li>
+        <li>Ada endpoint <code>POST .../{id}/restore</code> untuk membatalkan penghapusan</li>
+        <li>Transaksi lama tetap menampilkan nama wallet dan kategori yang sudah dihapus, ditandai <code>"is_deleted": true</code> — tampilkan dengan gaya berbeda supaya user tahu itu referensi ke data yang tidak aktif</li>
+        <li>Wallet atau kategori yang sudah dihapus <strong>ditolak</strong> untuk transaksi baru (404)</li>
+      </ul>
+
+      <h3>Semantik PATCH</h3>
+      <p>Semua endpoint PATCH bersifat parsial dengan tiga keadaan berbeda:</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Yang dikirim</th><th>Artinya</th></tr></thead>
+          <tbody>
+            <tr><td>Field tidak ada di body</td><td>Jangan diubah</td></tr>
+            <tr><td><code>"field": nilai</code></td><td>Ganti dengan nilai itu</td></tr>
+            <tr><td><code>"field": null</code></td><td>Kosongkan</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Kirim <code>null</code> hanya berfungsi untuk field yang memang boleh kosong: <code>end_date</code>, <code>end_month</code>, <code>target_date</code>, <code>product_url</code>, dan <code>amount</code> pada quick-add. Mengirim <code>null</code> ke field wajib akan ditolak.</p>
+      <pre><code>PATCH /budgets/{id}
+{ "end_month": null }        // budget jadi berlaku selamanya</code></pre>
+    </section>
+
+    <section id="s5">
+      <h2><span class="num">05</span>Health</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/health</span></div>
+      </div>
+      <pre><code>{ "data": { "status": "ok", "db": "ok", "version": "2.0.0" } }</code></pre>
+      <p>Balas <code>503</code> dengan <code>"status": "degraded"</code> dan <code>"db": "down"</code> kalau database tidak bisa dihubungi.</p>
+      <div class="note-box">
+        <p>Endpoint ini <strong>ikut butuh</strong> <code>X-API-Token</code>. Kalau dipakai sebagai uptime check dari luar, token tetap harus disertakan.</p>
+      </div>
+    </section>
+
+    <section id="s6">
+      <h2><span class="num">06</span>Wallets</h2>
+      <p>Dompet: Cash, BCA, GoPay, Dana, dan sejenisnya.</p>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/wallets</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/wallets</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/wallets/{id}</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/wallets/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/wallets/{id}</span><span class="note">soft delete</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/wallets/{id}/restore</span></div>
+      </div>
+      <p><strong>Query param list:</strong> <code>limit</code> (default 10, maks 200), <code>offset</code> (default 0), <code>include_deleted</code> (default false).</p>
+
+      <pre><code>{
+  "id": "0192a1b2-c3d4-4e5f-8a9b-0c1d2e3f4a5b",
+  "name": "BCA",
+  "type": "bank",
+  "initial_balance": 5000000,
+  "current_balance": 3450000,
+  "transaction_count": 87,
+  "color": "#3B82F6",
+  "icon": "bank",
+  "is_excluded_from_total": false,
+  "sort_order": 0,
+  "created_at": "2026-08-01T10:00:00+08:00",
+  "updated_at": "2026-08-01T10:00:00+08:00",
+  "deleted_at": null
+}</code></pre>
+
+      <div class="note-box">
+        <p><code>current_balance</code> dan <code>transaction_count</code> <strong>dihitung ulang setiap kali dibaca</strong> dari saldo awal plus seluruh transaksi. Tidak perlu dan tidak bisa dikirim saat create atau update. Setelah membuat transaksi, ambil ulang wallet-nya untuk mendapat saldo terbaru.</p>
+      </div>
+
+      <p><code>is_excluded_from_total: true</code> berarti wallet ini tidak ikut dihitung di <code>total_balance</code> pada summary — untuk deposito atau dana darurat.</p>
+
+      <h3>Create</h3>
+      <pre><code>POST /wallets
+{
+  "name": "BCA",
+  "type": "bank",
+  "initial_balance": 5000000,
+  "color": "#3B82F6",
+  "icon": "bank",
+  "is_excluded_from_total": false
+}</code></pre>
+      <ul>
+        <li><code>type</code> harus salah satu dari <code>cash</code>, <code>bank</code>, <code>ewallet</code>, <code>savings</code>, <code>other</code></li>
+        <li><code>color</code> <strong>wajib</strong>, hex 6 digit dengan <code>#</code> di depan</li>
+        <li><code>icon</code> <strong>wajib</strong>, string bebas — frontend yang menentukan artinya</li>
+        <li><code>initial_balance</code> tidak boleh negatif</li>
+        <li>Nama tidak boleh sama dengan wallet lain yang masih aktif (409)</li>
+      </ul>
+
+      <h3>Delete</h3>
+      <p>Bentuk response-nya berbeda dari yang lain:</p>
+      <pre><code>{
+  "data": {
+    "id": "0192...",
+    "name": "BCA",
+    "deleted_at": "2026-09-07T12:08:33+08:00",
+    "affected_transactions": 87
+  }
+}</code></pre>
+      <p>Delete selalu berhasil karena sifatnya soft delete. <strong>Pakai <code>affected_transactions</code> untuk dialog konfirmasi</strong> — misalnya “Wallet ini punya 87 transaksi. Riwayatnya tetap tersimpan. Hapus?”</p>
+    </section>
+
+    <section id="s7">
+      <h2><span class="num">07</span>Categories</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/categories</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/categories</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/categories/{id}</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/categories/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/categories/{id}</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/categories/{id}/restore</span></div>
+      </div>
+      <p><strong>Query param list:</strong> <code>type</code> (<code>income</code> / <code>expense</code>), <code>limit</code> (default 10, maks 200), <code>offset</code>, <code>include_deleted</code>.</p>
+      <pre><code>{
+  "id": "0192...",
+  "name": "Makan &amp; Minum",
+  "type": "expense",
+  "color": "#EF4444",
+  "icon": "utensils",
+  "is_default": true,
+  "sort_order": 1,
+  "deleted_at": null
+}</code></pre>
+      <p><strong>Create</strong> — <code>name</code>, <code>type</code>, <code>color</code> (hex), <code>icon</code> semuanya wajib.</p>
+      <p>Kategori default (<code>is_default: true</code>) sudah di-seed backend: delapan expense (Makan &amp; Minum, Transport, Belanja, Tagihan, Hiburan, Kesehatan, Pendidikan, Lainnya) dan lima income (Gaji, Freelance, Bonus, Hadiah, Lainnya). Boleh dihapus user dan tidak akan muncul lagi.</p>
+      <p>Nama kategori boleh sama antara income dan expense — “Lainnya” ada di keduanya. Yang tidak boleh adalah nama sama dengan tipe sama.</p>
+    </section>
+
+    <section id="s8">
+      <h2><span class="num">08</span>Transactions</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/transactions</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/transactions</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/transactions/{id}</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/transactions/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/transactions/{id}</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/transactions/{id}/restore</span></div>
+      </div>
+
+      <h3>Query param list</h3>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Param</th><th>Tipe</th><th>Default</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            <tr><td><code>from</code></td><td><code>YYYY-MM-DD</code></td><td>awal bulan berjalan</td><td>inklusif</td></tr>
+            <tr><td><code>to</code></td><td><code>YYYY-MM-DD</code></td><td>hari ini</td><td>inklusif</td></tr>
+            <tr><td><code>type</code></td><td>string</td><td>semua</td><td><code>income</code>, <code>expense</code>, <code>transfer</code></td></tr>
+            <tr><td><code>category_id</code></td><td>UUID, boleh CSV</td><td>semua</td><td><code>?category_id=id1,id2</code></td></tr>
+            <tr><td><code>wallet_id</code></td><td>UUID, boleh CSV</td><td>semua</td><td>ikut menangkap transfer <strong>masuk</strong> ke wallet itu</td></tr>
+            <tr><td><code>min_amount</code></td><td>int</td><td>—</td><td></td></tr>
+            <tr><td><code>max_amount</code></td><td>int</td><td>—</td><td></td></tr>
+            <tr><td><code>q</code></td><td>string</td><td>—</td><td>cari di <code>note</code>, tidak peka huruf besar kecil</td></tr>
+            <tr><td><code>sort</code></td><td>string</td><td><code>occurred_at:desc</code></td><td><code>occurred_at</code>, <code>amount</code>, <code>created_at</code> + <code>:asc</code>/<code>:desc</code></td></tr>
+            <tr><td><code>limit</code></td><td class="num-col">int</td><td class="num-col">50</td><td>maksimal 200</td></tr>
+            <tr><td><code>offset</code></td><td class="num-col">int</td><td class="num-col">0</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Nilai <code>sort</code> yang tidak dikenal tidak menghasilkan error, hanya jatuh ke urutan default.</p>
+
+      <h3>Bentuk transaksi</h3>
+      <p>Wallet dan kategori sudah ikut di-expand, jadi tidak perlu request tambahan:</p>
+      <pre><code>{
+  "id": "0192...",
+  "type": "expense",
+  "amount": 25000,
+  "note": "Kopi susu",
+  "occurred_at": "2026-09-07T09:30:00+08:00",
+  "wallet":    { "id": "0192...", "name": "Cash", "is_deleted": false },
+  "category":  { "id": "0192...", "name": "Makan &amp; Minum", "type": "expense", "is_deleted": false },
+  "to_wallet": null,
+  "deleted_at": null
+}</code></pre>
+
+      <h3>Aturan yang ditegakkan backend</h3>
+      <p>Pahami ini supaya form-nya benar sejak awal:</p>
+      <ol class="body-list">
+        <li><code>amount</code> harus lebih besar dari 0. Arah uang ditentukan <code>type</code>, <strong>bukan tanda minus</strong>. Pengeluaran tetap dikirim sebagai angka positif</li>
+        <li><code>income</code> / <code>expense</code> → <code>category_id</code> <strong>wajib</strong>, <code>to_wallet_id</code> harus kosong</li>
+        <li><code>transfer</code> → <code>to_wallet_id</code> <strong>wajib</strong>, <code>category_id</code> harus kosong, dan <code>to_wallet_id</code> tidak boleh sama dengan <code>wallet_id</code></li>
+        <li>Tipe kategori harus cocok dengan tipe transaksi — <strong>filter dropdown kategori berdasarkan tipe yang sedang dipilih</strong></li>
+        <li><code>occurred_at</code> boleh mundur sejauh apapun, tapi <strong>maksimal 1 hari ke depan</strong>. Batasi date picker sampai besok</li>
+        <li>Wallet dan kategori yang sudah dihapus ditolak (404)</li>
+        <li>Saldo wallet boleh minus. Backend tidak memblokir pengeluaran yang melebihi saldo — ini aplikasi pencatatan, bukan sistem pembayaran</li>
+      </ol>
+
+      <h3>Transfer</h3>
+      <pre><code>POST /transactions
+{
+  "type": "transfer",
+  "amount": 500000,
+  "wallet_id": "&lt;asal&gt;",
+  "to_wallet_id": "&lt;tujuan&gt;",
+  "occurred_at": "2026-09-07T09:30:00+08:00"
+}</code></pre>
+      <p>Transfer <strong>tidak</strong> dihitung sebagai pemasukan maupun pengeluaran di summary, analytics, dan savings — tapi tetap mengubah saldo kedua wallet.</p>
+
+      <h3>Patch</h3>
+      <p>Semua field opsional. Backend menggabungkan dengan data lama lalu memeriksa ulang seluruh aturan di atas. Mengubah <code>type</code> dari atau ke <code>transfer</code> otomatis membersihkan field lawannya.</p>
+    </section>
+
+    <section id="s9">
+      <h2><span class="num">09</span>Summary</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/summary</span><span class="note">default: bulan berjalan</span></div>
+      </div>
+      <pre><code>GET /summary?from=2026-08-01&amp;to=2026-08-31
+
+{
+  "data": {
+    "period": { "from": "2026-08-01", "to": "2026-08-31" },
+    "total_income": 8500000,
+    "total_expense": 4230000,
+    "net": 4270000,
+    "total_balance": 12750000,
+    "transaction_count": 87,
+    "comparison": { "income_change_pct": 4.2, "expense_change_pct": -11.8 }
+  }
+}</code></pre>
+      <div class="note-box">
+        <p><code>total_balance</code> adalah saldo seluruh wallet aktif yang tidak dikecualikan — <strong>tidak dibatasi periode</strong>, beda dengan angka lain di response ini.</p>
+      </div>
+      <p><code>comparison</code> membandingkan dengan periode sebelumnya yang panjangnya sama. Bernilai <code>0</code> kalau periode pembanding tidak punya data — bukan <code>null</code>, bukan <code>Infinity</code>.</p>
+    </section>
+
+    <section id="s10">
+      <h2><span class="num">10</span>Analytics</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/analytics/by-category</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/analytics/by-wallet</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/analytics/trend</span></div>
+      </div>
+      <p>Semua menerima <code>from</code> dan <code>to</code>, default bulan berjalan — kecuali <code>trend</code> yang defaultnya 6 bulan terakhir. Response berupa array polos di dalam <code>data</code>, tanpa <code>meta</code>.</p>
+
+      <h3>By category</h3>
+      <pre><code>GET /analytics/by-category?type=expense
+
+{
+  "data": [
+    {
+      "category_id": "0192...",
+      "category_name": "Makan &amp; Minum",
+      "category_type": "expense",
+      "is_deleted": false,
+      "total": 1850000,
+      "count": 42,
+      "percentage": 43.7
+    }
+  ]
+}</code></pre>
+      <p>Diurutkan dari yang terbesar. <code>type</code> opsional; kalau dikosongkan, income dan expense ikut. <code>percentage</code> dihitung terhadap total seluruh baris di response ini, jadi selalu berjumlah 100.</p>
+
+      <h3>By wallet</h3>
+      <pre><code>{
+  "data": [
+    { "wallet_id": "0192...", "wallet_name": "Cash", "is_deleted": false,
+      "income": 5000000, "expense": 200000, "net": 4800000, "count": 2 }
+  ]
+}</code></pre>
+      <p>Semua wallet aktif ikut muncul, termasuk yang belum punya transaksi (nilainya 0).</p>
+
+      <h3>Trend</h3>
+      <pre><code>GET /analytics/trend?granularity=month&amp;from=2026-07-01&amp;to=2026-09-30
+
+{
+  "data": [
+    { "bucket": "2026-07", "start": "2026-07-01", "end": "2026-07-31",
+      "income": 0, "expense": 80000, "net": -80000 }
+  ]
+}</code></pre>
+      <p><code>granularity</code>: <code>day</code>, <code>week</code>, atau <code>month</code> (default <code>month</code>).</p>
+      <div class="note-box">
+        <p><strong>Bucket kosong tetap dikembalikan dengan nilai 0</strong>, jadi grafik tidak bolong dan frontend tidak perlu mengisi celah sendiri. Label bucket: <code>2026-09-07</code> (day), <code>2026-W37</code> (week, ISO), <code>2026-09</code> (month). Minggu selalu mulai hari Senin.</p>
+      </div>
+    </section>
+
+    <section id="s11">
+      <h2><span class="num">11</span>Savings</h2>
+      <p>Menjawab “berapa uang yang bisa saya tabung”.</p>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/savings/summary</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/savings/breakdown</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/savings/targets</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/savings/targets</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/savings/targets/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/savings/targets/{id}</span></div>
+      </div>
+
+      <p><code>period</code>: <code>week</code> atau <code>month</code> (default <code>month</code>).</p>
+      <div class="note-box">
+        <span class="tag">Rentang default berbeda</span>
+        <p>Pada <code>summary</code>, kalau <code>from</code> dan <code>to</code> kosong dipakai <strong>periode berjalan</strong>. Pada <code>breakdown</code>, defaultnya <strong>6 bulan terakhir</strong> (<code>period=month</code>) atau <strong>12 minggu terakhir</strong> (<code>period=week</code>), karena gunanya untuk grafik deret waktu.</p>
+      </div>
+
+      <pre><code>{
+  "data": {
+    "period": "month",
+    "range": { "from": "2026-08-01", "to": "2026-08-31" },
+    "income": 8500000,
+    "expense": 4230000,
+    "savable": 4270000,
+    "savings_rate": 50.24,
+    "target": {
+      "amount": 3000000,
+      "achieved": true,
+      "progress_pct": 142.3,
+      "difference": 1270000
+    },
+    "daily_average_expense": 136451,
+    "projected_savable": 4270000,
+    "days_elapsed": 11,
+    "days_total": 31
+  }
+}</code></pre>
+      <ul>
+        <li><code>savable</code> = <code>income - expense</code>. Transfer diabaikan. <strong>Boleh negatif dan harus ditampilkan apa adanya</strong> — jangan di-clamp ke 0, itu justru informasi paling penting saat user boros</li>
+        <li><code>target</code> bernilai <code>null</code> kalau belum ada target aktif untuk periode itu</li>
+        <li><code>projected_savable</code> adalah proyeksi sampai akhir periode kalau pola pengeluaran bertahan. Untuk periode yang sudah lewat, nilainya sama dengan <code>savable</code></li>
+        <li><code>savings_rate</code> bernilai 0 kalau tidak ada pemasukan</li>
+      </ul>
+
+      <h3>Breakdown</h3>
+      <pre><code>{
+  "data": [
+    { "bucket": "2026-W23", "start": "2026-06-01", "end": "2026-06-07",
+      "income": 0, "expense": 620000, "savable": -620000, "savings_rate": 0 }
+  ]
+}</code></pre>
+      <p>Bucket kosong tetap ikut dengan nilai 0.</p>
+
+      <h3>Target menabung</h3>
+      <pre><code>POST /savings/targets
+{
+  "period": "monthly",
+  "amount": 3000000,
+  "start_date": "2026-08-01",
+  "end_date": null,
+  "is_active": true
+}</code></pre>
+      <div class="note-box warn">
+        <span class="tag">Aturan penting</span>
+        <p>Isi <strong>salah satu</strong> antara <code>amount</code> (nominal) atau <code>target_rate</code> (persen dari pemasukan, 0–100). Tidak boleh dua-duanya, tidak boleh kosong dua-duanya. Di form, jadikan ini pilihan radio — bukan dua input bebas.</p>
+      </div>
+      <ul>
+        <li><code>period</code>: <code>weekly</code> atau <code>monthly</code></li>
+        <li><code>start_date</code> wajib, <code>end_date</code> opsional (<code>null</code> = berlaku terus)</li>
+        <li>Maksimal satu target aktif per periode — target kedua ditolak <code>409</code></li>
+      </ul>
+      <p>Response target selalu memuat <code>amount</code> dan <code>target_rate</code>, salah satunya <code>null</code>.</p>
+    </section>
+
+    <section id="s12">
+      <h2><span class="num">12</span>Wishlist</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/wishlist</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/wishlist</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/wishlist/summary</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/wishlist/{id}</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/wishlist/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/wishlist/{id}</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/wishlist/{id}/restore</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/wishlist/{id}/allocate</span><span class="note">sisihkan dana</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/wishlist/{id}/purchase</span><span class="note">beli + catat transaksi</span></div>
+      </div>
+      <p><strong>Query param list:</strong> <code>status</code> (<code>planned</code> / <code>saving</code> / <code>purchased</code> / <code>cancelled</code>), <code>sort</code> (<code>priority</code>, <code>estimated_price</code>, <code>target_date</code>, <code>name</code>, <code>created_at</code> + <code>:asc</code>/<code>:desc</code>), <code>limit</code> (default 50, maks 200), <code>offset</code>, <code>include_deleted</code>.</p>
+
+      <pre><code>{
+  "data": {
+    "id": "0192...",
+    "name": "Keyboard mekanik",
+    "estimated_price": 1200000,
+    "priority": "high",
+    "target_date": "2026-12-01",
+    "product_url": null,
+    "note": "",
+    "status": "saving",
+    "saved_amount": 400000,
+    "remaining": 800000,
+    "progress_pct": 33.33,
+    "purchased_at": null,
+    "purchase_transaction_id": null,
+    "affordability": {
+      "avg_monthly_savable": 4270000,
+      "months_needed": 1,
+      "estimated_ready_date": "2026-10-07",
+      "on_track_for_target_date": true
+    },
+    "deleted_at": null
+  }
+}</code></pre>
+
+      <h3>Affordability — perlu penanganan khusus di UI</h3>
+      <p>Objek ini punya tiga keadaan yang berbeda artinya:</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Keadaan</th><th>Arti</th><th>Saran tampilan</th></tr></thead>
+          <tbody>
+            <tr><td><code>affordability: null</code></td><td>Data historis belum ada satu bulan penuh</td><td>“Belum cukup data untuk memperkirakan”</td></tr>
+            <tr><td><code>months_needed: null</code></td><td>Kemampuan menabung 0 atau minus</td><td>“Dengan pola sekarang, belum bisa diperkirakan”</td></tr>
+            <tr><td>terisi lengkap</td><td>Perkiraan tersedia</td><td>Tampilkan tanggal dan jumlah bulan</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>avg_monthly_savable</code> adalah rata-rata 3 bulan terakhir <strong>yang sudah lengkap</strong> — bulan berjalan sengaja tidak ikut karena datanya belum penuh.</p>
+
+      <h3>Alokasi dana</h3>
+      <pre><code>POST /wishlist/{id}/allocate
+{ "amount": 400000 }</code></pre>
+      <p>Menambah <code>saved_amount</code>. Status <code>planned</code> otomatis berubah jadi <code>saving</code>.</p>
+      <ul>
+        <li>Total <code>saved_amount</code> tidak boleh melebihi <code>estimated_price</code> → <code>400</code></li>
+        <li>Item <code>purchased</code> atau <code>cancelled</code> tidak bisa dialokasi → <code>422</code></li>
+      </ul>
+
+      <h3>Pembelian</h3>
+      <pre><code>POST /wishlist/{id}/purchase
+{
+  "wallet_id": "0192...",
+  "category_id": "0192...",
+  "actual_price": 1150000,
+  "occurred_at": "2026-09-15T10:00:00+08:00",
+  "note": ""
+}</code></pre>
+      <div class="note-box warn">
+        <span class="tag">Satu request, dua efek</span>
+        <p>Endpoint ini membuat transaksi expense baru <em>dan</em> menandai item jadi <code>purchased</code>, dalam satu database transaction. Keduanya berhasil atau keduanya batal — <strong>tidak perlu memanggil <code>POST /transactions</code> secara terpisah.</strong></p>
+      </div>
+      <ul>
+        <li><code>category_id</code> harus bertipe <code>expense</code>, kalau tidak <code>400</code></li>
+        <li><code>occurred_at</code> opsional, default sekarang</li>
+        <li><code>note</code> opsional, default “Pembelian wishlist: nama item”</li>
+        <li>Item yang sudah <code>purchased</code> tidak bisa dibeli lagi → <code>422</code></li>
+      </ul>
+      <p>Setelah berhasil, <code>purchase_transaction_id</code> terisi id transaksi yang dibuat.</p>
+      <p>Status <code>purchased</code> <strong>tidak bisa di-set lewat PATCH</strong> — harus lewat endpoint ini, supaya transaksinya selalu ikut tercatat. Harga item yang sudah dibeli juga tidak bisa diubah (<code>422</code>); ubah dulu statusnya ke <code>planned</code>.</p>
+
+      <h3>Ringkasan</h3>
+      <pre><code>GET /wishlist/summary
+
+{
+  "data": {
+    "total_items": 7,
+    "total_estimated": 8400000,
+    "total_saved": 1200000,
+    "by_priority": { "high": 2, "medium": 3, "low": 2 }
+  }
+}</code></pre>
+      <p>Item berstatus <code>cancelled</code> tidak ikut dihitung.</p>
+    </section>
+
+    <section id="s13">
+      <h2><span class="num">13</span>Budgets</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/budgets</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/budgets</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/budgets/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/budgets/{id}</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/budgets/status</span><span class="note">untuk progress bar</span></div>
+      </div>
+      <pre><code>POST /budgets
+{
+  "category_id": "0192...",
+  "amount": 2000000,
+  "period": "monthly",
+  "start_month": "2026-08",
+  "end_month": null
+}</code></pre>
+      <ul>
+        <li>Hanya untuk kategori bertipe <code>expense</code>, kalau tidak <code>400</code></li>
+        <li><code>period</code>: <code>weekly</code> atau <code>monthly</code> (default <code>monthly</code>)</li>
+        <li><code>start_month</code> dan <code>end_month</code> menerima <code>YYYY-MM</code> maupun <code>YYYY-MM-DD</code>, keduanya dinormalkan ke tanggal 1</li>
+        <li>Satu kategori hanya boleh punya satu budget yang masih berjalan (<code>end_month</code> kosong) — yang kedua ditolak <code>409</code></li>
+      </ul>
+
+      <h3>Status budget</h3>
+      <pre><code>GET /budgets/status?month=2026-08
+
+{
+  "data": [
+    {
+      "budget_id": "0192...",
+      "category_id": "0192...",
+      "category_name": "Makan &amp; Minum",
+      "limit": 2000000,
+      "spent": 1850000,
+      "remaining": 150000,
+      "percentage": 92.5,
+      "status": "warning",
+      "days_left": 20,
+      "period": "monthly",
+      "from": "2026-08-01",
+      "to": "2026-08-31"
+    }
+  ]
+}</code></pre>
+      <div class="scroll">
+        <table>
+          <thead><tr><th><code>status</code></th><th>Ambang</th></tr></thead>
+          <tbody>
+            <tr><td><code>safe</code></td><td>di bawah 75%</td></tr>
+            <tr><td><code>warning</code></td><td>75–100%</td></tr>
+            <tr><td><code>exceeded</code></td><td>di atas 100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><code>remaining</code> <strong>bisa negatif</strong> kalau melewati batas — tampilkan apa adanya</li>
+        <li><code>month</code> opsional, default bulan berjalan</li>
+        <li>Budget mingguan dinilai untuk satu minggu: minggu berjalan kalau bulan yang diminta adalah bulan sekarang, atau minggu terakhir bulan itu kalau bulan lampau. <code>from</code> dan <code>to</code> di response memberi tahu rentang yang dipakai</li>
+      </ul>
+    </section>
+
+    <section id="s14">
+      <h2><span class="num">14</span>Recurring rules</h2>
+      <p>Transaksi berulang. Backend punya scheduler yang jalan tiap jam dan membuat transaksinya otomatis — frontend hanya mengatur aturannya.</p>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/recurring</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/recurring</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/recurring/{id}</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/recurring/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/recurring/{id}</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/recurring/{id}/toggle</span><span class="note">balik is_active</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/recurring/run</span><span class="note">trigger manual</span></div>
+      </div>
+      <pre><code>POST /recurring
+{
+  "name": "Langganan streaming",
+  "type": "expense",
+  "amount": 50000,
+  "wallet_id": "0192...",
+  "category_id": "0192...",
+  "frequency": "monthly",
+  "interval": 1,
+  "day_of_month": 31,
+  "day_of_week": null,
+  "start_date": "2026-01-31",
+  "end_date": null,
+  "is_active": true
+}</code></pre>
+      <ul>
+        <li><code>type</code>: <code>income</code> atau <code>expense</code>, harus cocok dengan tipe kategori</li>
+        <li><code>frequency</code>: <code>daily</code>, <code>weekly</code>, <code>monthly</code>, <code>yearly</code></li>
+        <li><code>interval</code>: tiap berapa kali frequency, minimal 1. <code>weekly</code> + <code>interval: 2</code> berarti dua minggu sekali</li>
+        <li><code>day_of_month</code> (1–31) hanya untuk <code>monthly</code>, <code>day_of_week</code> (0 = Minggu sampai 6 = Sabtu) hanya untuk <code>weekly</code>. Mengirim yang tidak sesuai frequency ditolak</li>
+      </ul>
+      <div class="note-box">
+        <p><strong><code>day_of_month: 31</code> di bulan yang tidak punya tanggal 31 otomatis jatuh ke hari terakhir bulan itu.</strong> Februari jadi tanggal 28 atau 29, April jadi 30.</p>
+      </div>
+      <p>Response memuat <code>next_run_at</code> dan <code>last_run_at</code> (<code>YYYY-MM-DD</code>, <code>last_run_at</code> bernilai <code>null</code> sebelum pernah jalan) — bagus ditampilkan sebagai “jadwal berikutnya”.</p>
+
+      <h3>Trigger manual</h3>
+      <pre><code>POST /recurring/run
+
+{
+  "data": { "rules_checked": 3, "created": 8, "skipped": 2,
+            "rules_failed": 0, "failed_rule_ids": [] }
+}</code></pre>
+      <p>Berguna untuk testing tanpa menunggu satu jam. Aman dipanggil berkali-kali — transaksi yang sudah dibuat tidak akan ganda.</p>
+      <p>Menghapus rule <strong>tidak</strong> menghapus transaksi yang sudah terlanjur dibuat.</p>
+    </section>
+
+    <section id="s15">
+      <h2><span class="num">15</span>Quick adds</h2>
+      <p>Tombol pintasan untuk transaksi yang sering diulang.</p>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/quick-adds</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/quick-adds</span></div>
+        <div class="route"><span class="verb patch">PATCH</span><span class="path">/quick-adds/{id}</span></div>
+        <div class="route"><span class="verb delete">DELETE</span><span class="path">/quick-adds/{id}</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/quick-adds/{id}/execute</span></div>
+      </div>
+      <pre><code>POST /quick-adds
+{
+  "label": "Kopi",
+  "type": "expense",
+  "amount": 25000,
+  "wallet_id": "0192...",
+  "category_id": "0192...",
+  "note": "kopi susu"
+}</code></pre>
+      <p><code>amount</code> boleh <code>null</code>, artinya nominalnya diisi manual tiap kali dipakai. Tipe kategori harus cocok dengan <code>type</code>. Label tidak boleh duplikat (<code>409</code>).</p>
+
+      <h3>Menjalankan</h3>
+      <pre><code>POST /quick-adds/{id}/execute
+{ }</code></pre>
+      <p>Body boleh kosong. Field opsional: <code>amount</code> (menimpa nominal bawaan, <strong>wajib</strong> kalau quick-add-nya tidak punya nominal), <code>note</code>, <code>occurred_at</code>.</p>
+      <pre><code>HTTP 201
+{
+  "data": {
+    "transaction_id": "0192...",
+    "type": "expense",
+    "amount": 25000,
+    "note": "kopi susu",
+    "occurred_at": "2026-09-07T12:07:09+08:00"
+  }
+}</code></pre>
+      <p>Transaksi dibuat lewat jalur yang sama dengan <code>POST /transactions</code>, jadi seluruh aturan bisnis transaksi tetap berlaku.</p>
+    </section>
+
+    <section id="s16">
+      <h2><span class="num">16</span>Export &amp; import</h2>
+      <div class="routes">
+        <div class="route"><span class="verb get">GET</span><span class="path">/export?format=json</span></div>
+        <div class="route"><span class="verb get">GET</span><span class="path">/export?format=csv</span></div>
+        <div class="route"><span class="verb post">POST</span><span class="path">/import?dry_run=true</span><span class="note">multipart</span></div>
+      </div>
+      <p><code>format</code> default <code>json</code>, rentang default setahun terakhir. Response memakai header <code>Content-Disposition: attachment</code>, jadi bisa langsung dijadikan link unduhan.</p>
+      <p>Export JSON memuat wallets, categories, dan transactions sekaligus. Export CSV berkolom <code>date,type,amount,wallet,category,note</code>.</p>
+
+      <h3>Import</h3>
+      <p>Memakai <code>multipart/form-data</code> dengan field bernama <code>file</code>, maksimal 10 MB, hanya menerima <code>.csv</code>.</p>
+      <pre><code>const form = new FormData()
+form.append("file", file)
+
+await fetch("/api/v1/import?dry_run=true", {
+  method: "POST",
+  headers: { "X-API-Token": token },   // jangan set Content-Type manual
+  body: form,
+})</code></pre>
+      <pre><code>{
+  "data": {
+    "dry_run": true,
+    "total_rows": 3,
+    "valid_rows": 1,
+    "invalid_rows": 2,
+    "imported": 0,
+    "errors": [
+      { "line": 3, "message": "amount harus angka" },
+      { "line": 4, "message": "wallet \"Dompet Hantu\" tidak ditemukan" }
+    ]
+  }
+}</code></pre>
+      <div class="note-box warn">
+        <span class="tag">Default aman</span>
+        <p><code>dry_run</code> default <strong>true</strong>. Harus dikirim <code>dry_run=false</code> secara eksplisit untuk benar-benar menulis. Alur yang disarankan: dry run dulu, tampilkan daftar error ke user, baru jalankan yang sungguhan.</p>
+      </div>
+      <ul>
+        <li><code>line</code> menunjuk nomor baris di file (baris 1 adalah header), jadi bisa ditampilkan langsung ke user</li>
+        <li>Import sungguhan berjalan dalam satu database transaction. <strong>Kalau masih ada satu saja baris yang salah, tidak ada satupun yang masuk</strong> dan <code>imported</code> bernilai 0</li>
+        <li>Wallet dan kategori dicocokkan berdasarkan <strong>nama</strong>, tidak peka huruf besar kecil. Nama yang tidak ada ditolak, bukan dibuat otomatis</li>
+        <li>Baris <code>transfer</code> tidak didukung lewat CSV karena butuh dua wallet</li>
+      </ul>
+      <p>Backup penuh database bukan lewat API, tapi lewat <code>pg_dump</code> di sisi server.</p>
+    </section>
+
+    <section id="s17">
+      <h2><span class="num">17</span>Catatan praktis</h2>
+
+      <h3>Warna dan ikon ada di backend</h3>
+      <p>Field <code>color</code> (hex) dan <code>icon</code> (string bebas) tersimpan di wallet dan kategori, dan <strong>wajib diisi</strong> saat create. Frontend yang menentukan arti string <code>icon</code> — misalnya memetakannya ke nama ikon di icon set yang dipakai. Sediakan color picker dan icon picker di form.</p>
+
+      <h3>Jangan cache saldo</h3>
+      <p><code>current_balance</code> berubah setiap ada transaksi yang menyentuh wallet itu, termasuk transfer dari wallet lain. Ambil ulang setelah operasi tulis apapun.</p>
+
+      <h3>Urutan pemanggilan saat aplikasi dibuka</h3>
+      <ol class="body-list">
+        <li><code>GET /wallets</code> dan <code>GET /categories</code> — untuk isi dropdown, cache di state</li>
+        <li><code>GET /summary</code> — angka besar di dashboard</li>
+        <li><code>GET /transactions</code> — daftar terbaru</li>
+        <li>Sisanya sesuai halaman yang dibuka</li>
+      </ol>
+
+      <h3>Tangani <code>details</code> pada error 400</h3>
+      <p>Isinya peta field ke pesan, siap ditempelkan ke input yang bersangkutan tanpa parsing tambahan.</p>
+
+      <div class="note-box warn">
+        <span class="tag">Angka negatif itu fitur</span>
+        <p><code>savable</code>, <code>net</code>, dan <code>remaining</code> pada budget memang bisa minus. Tampilkan dengan warna berbeda — jangan disembunyikan atau dijadikan nol.</p>
+      </div>
+
+      <p>Kalau ada endpoint yang perilakunya berbeda dari dokumen ini, kabari — berarti dokumennya yang perlu diperbaiki.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  Kite Finance API 2.0.0 · Base path <code>/api/v1</code> · Zona waktu WITA (Asia/Makassar)
+</footer>
+
+<script>
+  // Sorot bagian yang sedang dibaca di daftar isi.
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var visible = new Set();
+
+    function paint() {
+      var current = null;
+      links.forEach(function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (visible.has(id) && current === null) current = id;
+      });
+      links.forEach(function (a) {
+        a.classList.toggle('on', a.getAttribute('href').slice(1) === current);
+      });
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      });
+      paint();
+    }, { rootMargin: '0px 0px -70% 0px' });
+
+    document.querySelectorAll('section[id]').forEach(function (s) { observer.observe(s); });
+  })();
+</script>

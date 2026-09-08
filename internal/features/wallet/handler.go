@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var allowedWalletTypes = []string{"cash", "bank", "ewallet", "savings", "other"}
+
 type WalletHandler struct {
 	service WalletServicer
 }
@@ -41,11 +43,10 @@ func (h *WalletHandler) HandlerWallets(w http.ResponseWriter, r *http.Request) {
 			details["name"] = "name cannot be empty!"
 		}
 
-		allowedTypes := []string{"cash", "bank", "ewallet", "savings", "other"}
 		if validator.IsEmptyString(reqBody.Type) {
 			details["type"] = "type cannot be empty!"
-		} else if !validator.IsOneOf(reqBody.Type, allowedTypes...) {
-			details["type"] = "type harus salah satu dari: " + strings.Join(allowedTypes, ", ")
+		} else if !validator.IsOneOf(reqBody.Type, allowedWalletTypes...) {
+			details["type"] = "type harus salah satu dari: " + strings.Join(allowedWalletTypes, ", ")
 		}
 
 		if validator.IsEmptyString(reqBody.Color) {
@@ -70,70 +71,32 @@ func (h *WalletHandler) HandlerWallets(w http.ResponseWriter, r *http.Request) {
 		wallet, err := h.service.CreateWallet(ctx, &reqBody)
 
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := Wallet{
-			ID:                  wallet.ID,
-			Name:                wallet.Name,
-			Type:                wallet.Type,
-			InitialBalance:      wallet.InitialBalance,
-			Color:               wallet.Color,
-			Icon:                wallet.Icon,
-			IsExcludedFromTotal: wallet.IsExcludedFromTotal,
-			SortOrder:           wallet.SortOrder,
-			CreatedAt:           wallet.CreatedAt,
-			UpdatedAt:           wallet.UpdatedAt,
-		}
-
-		response.WriteSuccessWithSingleData(w, http.StatusCreated, resp)
+		response.WriteSuccessWithSingleData(w, http.StatusCreated, NewWalletResponse(wallet))
 
 	case http.MethodGet:
 		ctx := r.Context()
 
-		limit := 10
-		offset := 0
-
-		strLimit := r.URL.Query().Get("limit")
-		strOffset := r.URL.Query().Get("offset")
-
-		if parsed, ok := queryparam.ToInt(strLimit); ok {
-			limit = parsed
-		}
-
-		if parsed, ok := queryparam.ToInt(strOffset); ok {
-			offset = parsed
-		}
-
-		if limit < 0 || offset < 0 {
+		limit, offset, ok := queryparam.Pagination(r.URL.Query().Get("limit"), r.URL.Query().Get("offset"), 10, 200)
+		if !ok {
 			response.WriteError(w, http.StatusBadRequest, "BAD_REQUEST", "limit dan offset tidak boleh negatif", nil)
 			return
 		}
 
-		wallets, total, err := h.service.GetAllWallets(ctx, limit, offset)
+		includeDeleted, _ := queryparam.ToBool(r.URL.Query().Get("include_deleted"))
+
+		wallets, total, err := h.service.GetAllWallets(ctx, limit, offset, includeDeleted)
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
 		resp := []WalletResponse{}
 		for _, wallet := range wallets {
-			w := WalletResponse{
-				ID:                  wallet.ID,
-				Name:                wallet.Name,
-				Type:                wallet.Type,
-				InitialBalance:      wallet.InitialBalance,
-				Color:               wallet.Color,
-				Icon:                wallet.Icon,
-				IsExcludedFromTotal: wallet.IsExcludedFromTotal,
-				SortOrder:           wallet.SortOrder,
-				CreatedAt:           wallet.CreatedAt,
-				UpdatedAt:           wallet.UpdatedAt,
-			}
-			resp = append(resp, w)
+			resp = append(resp, NewWalletResponse(wallet))
 		}
 
 		response.WriteSuccessWithMultipleData(w, http.StatusOK, resp, response.APIMeta{Total: total, Limit: limit, Offset: offset})
@@ -144,7 +107,7 @@ func (h *WalletHandler) HandlerWallets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WalletHandler) HandlerWalletByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/wallet/")
+	id := r.PathValue("id")
 
 	if validator.IsEmptyString(id) {
 		response.WriteError(w, http.StatusBadRequest, "EMPTY_ID", "ID can't be empty!", nil)
@@ -187,12 +150,11 @@ func (h *WalletHandler) HandlerWalletByID(w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		allowedTypes := []string{"cash", "bank", "ewallet", "savings", "other"}
 		if reqBody.Type != nil {
 			if validator.IsEmptyString(*reqBody.Type) {
 				details["type"] = "type tidak boleh kosong"
-			} else if !validator.IsOneOf(*reqBody.Type, allowedTypes...) {
-				details["type"] = "type harus salah satu dari: " + strings.Join(allowedTypes, ", ")
+			} else if !validator.IsOneOf(*reqBody.Type, allowedWalletTypes...) {
+				details["type"] = "type harus salah satu dari: " + strings.Join(allowedWalletTypes, ", ")
 			}
 		}
 
@@ -223,102 +185,55 @@ func (h *WalletHandler) HandlerWalletByID(w http.ResponseWriter, r *http.Request
 
 		wallet, err := h.service.PatchWallet(ctx, id, &reqBody)
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := WalletResponse{
-			ID:                  wallet.ID,
-			Name:                wallet.Name,
-			Type:                wallet.Type,
-			InitialBalance:      wallet.InitialBalance,
-			Color:               wallet.Color,
-			Icon:                wallet.Icon,
-			IsExcludedFromTotal: wallet.IsExcludedFromTotal,
-			SortOrder:           wallet.SortOrder,
-			CreatedAt:           wallet.CreatedAt,
-			UpdatedAt:           wallet.UpdatedAt,
-		}
+		response.WriteSuccessWithSingleData(w, http.StatusOK, NewWalletResponse(wallet))
 
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
 	case http.MethodGet:
 		ctx := r.Context()
 
 		wallet, err := h.service.GetWalletByID(ctx, id)
-
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := WalletResponse{
-			ID:                  wallet.ID,
-			Name:                wallet.Name,
-			Type:                wallet.Type,
-			InitialBalance:      wallet.InitialBalance,
-			Color:               wallet.Color,
-			Icon:                wallet.Icon,
-			IsExcludedFromTotal: wallet.IsExcludedFromTotal,
-			SortOrder:           wallet.SortOrder,
-			CreatedAt:           wallet.CreatedAt,
-			UpdatedAt:           wallet.UpdatedAt,
-		}
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
+		response.WriteSuccessWithSingleData(w, http.StatusOK, NewWalletResponse(wallet))
 
 	case http.MethodDelete:
 		ctx := r.Context()
 
+		// Delete selalu berhasil karena soft delete, tapi jumlah transaksi yang
+		// ikut terpengaruh dikembalikan supaya frontend bisa memberi peringatan.
 		wallet, err := h.service.DeleteWallet(ctx, id)
-
 		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
+			response.WriteServiceError(w, err)
 			return
 		}
 
-		resp := WalletResponse{
-			ID:                  wallet.ID,
-			Name:                wallet.Name,
-			Type:                wallet.Type,
-			InitialBalance:      wallet.InitialBalance,
-			Color:               wallet.Color,
-			Icon:                wallet.Icon,
-			IsExcludedFromTotal: wallet.IsExcludedFromTotal,
-			SortOrder:           wallet.SortOrder,
-			CreatedAt:           wallet.CreatedAt,
-			UpdatedAt:           wallet.UpdatedAt,
-		}
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
-
-	case http.MethodPost:
-		ctx := r.Context()
-
-		wallet, err := h.service.RestoreWallet(ctx, id)
-
-		if err != nil {
-			status, code := response.StatusFromError(err)
-			response.WriteError(w, status, code, err.Error(), nil)
-			return
-		}
-
-		resp := WalletResponse{
-			ID:                  wallet.ID,
-			Name:                wallet.Name,
-			Type:                wallet.Type,
-			InitialBalance:      wallet.InitialBalance,
-			Color:               wallet.Color,
-			Icon:                wallet.Icon,
-			IsExcludedFromTotal: wallet.IsExcludedFromTotal,
-			SortOrder:           wallet.SortOrder,
-			CreatedAt:           wallet.CreatedAt,
-			UpdatedAt:           wallet.UpdatedAt,
-		}
-		response.WriteSuccessWithSingleData(w, http.StatusOK, resp)
+		response.WriteSuccessWithSingleData(w, http.StatusOK, NewDeleteWalletResponse(wallet))
 
 	default:
 		response.WriteError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
 	}
 
+}
+
+func (h *WalletHandler) HandlerRestoreWallet(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	if validator.IsEmptyString(id) {
+		response.WriteError(w, http.StatusBadRequest, "EMPTY_ID", "ID can't be empty!", nil)
+		return
+	}
+
+	wallet, err := h.service.RestoreWallet(r.Context(), id)
+	if err != nil {
+		response.WriteServiceError(w, err)
+		return
+	}
+
+	response.WriteSuccessWithSingleData(w, http.StatusOK, NewWalletResponse(wallet))
 }

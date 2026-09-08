@@ -10,12 +10,12 @@ type Transaction struct {
 	Type            string
 	Amount          int
 	WalletID        string
-	ToWalletID      string
-	CategoryID      string
+	ToWalletID      sql.NullString
+	CategoryID      sql.NullString
 	Note            string
 	OccurredAt      time.Time
-	RecurringRuleID string
-	WishlistItemID  string
+	RecurringRuleID sql.NullString
+	WishlistItemID  sql.NullString
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       sql.NullTime
@@ -31,6 +31,19 @@ type CreateTransactionParams struct {
 	OccurredAt      time.Time
 	RecurringRuleID *string
 	WishlistItemID  *string
+}
+
+// UpdateTransactionParams berisi keadaan akhir transaksi setelah patch
+// digabung dengan data lama. Service yang menggabungkan, repository tinggal
+// menulis apa adanya, jadi tidak ada COALESCE yang bikin aturan transfer bocor.
+type UpdateTransactionParams struct {
+	Type       string
+	Amount     int
+	WalletID   string
+	ToWalletID *string
+	CategoryID *string
+	Note       string
+	OccurredAt time.Time
 }
 
 type WalletRef struct {
@@ -55,6 +68,7 @@ type TransactionDetail struct {
 	Wallet     WalletRef
 	Category   *CategoryRef
 	ToWallet   *WalletRef
+	DeletedAt  sql.NullTime
 }
 
 type CategoryInfo struct {

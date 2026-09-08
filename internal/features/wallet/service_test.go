@@ -10,19 +10,27 @@ import (
 
 type FakeWalletRepository struct {
 	CreateWalletFunc  func(ctx context.Context, name string, walletType string, initialBalancae int, color string, icon string, IsExcludedFromTotal bool) (Wallet, error)
-	GetAllWalletsFunc func(ctx context.Context, limit int, offset int) ([]Wallet, int, error)
+	GetAllWalletsFunc func(ctx context.Context, limit int, offset int, includeDeleted bool) ([]Wallet, int, error)
 	PatchWalletFunc   func(ctx context.Context, id string, name *string, walletType *string, initialBalancae *int, color *string, icon *string, IsExcludedFromTotal *bool) (Wallet, error)
 	GetWalletByIDFunc func(ctx context.Context, id string) (Wallet, error)
 	DeleteWalletFunc  func(ctx context.Context, id string) (Wallet, error)
 	RestoreWalletFunc func(ctx context.Context, id string) (Wallet, error)
+	TotalBalanceFunc  func(ctx context.Context) (int, error)
 }
 
 func (f *FakeWalletRepository) CreateWallet(ctx context.Context, name string, walletType string, initialBalancae int, color string, icon string, IsExcludedFromTotal bool) (Wallet, error) {
 	return f.CreateWalletFunc(ctx, name, walletType, initialBalancae, color, icon, IsExcludedFromTotal)
 }
 
-func (f *FakeWalletRepository) GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error) {
-	return f.GetAllWalletsFunc(ctx, limit, offset)
+func (f *FakeWalletRepository) GetAllWallets(ctx context.Context, limit int, offset int, includeDeleted bool) ([]Wallet, int, error) {
+	return f.GetAllWalletsFunc(ctx, limit, offset, includeDeleted)
+}
+
+func (f *FakeWalletRepository) TotalBalance(ctx context.Context) (int, error) {
+	if f.TotalBalanceFunc == nil {
+		return 0, nil
+	}
+	return f.TotalBalanceFunc(ctx)
 }
 
 func (f *FakeWalletRepository) PatchWallet(ctx context.Context, id string, name *string, walletType *string, initialBalancae *int, color *string, icon *string, IsExcludedFromTotal *bool) (Wallet, error) {
@@ -127,14 +135,14 @@ func TestGetAllWalletsService(t *testing.T) {
 	t.Run("get all wallet - success", func(t *testing.T) {
 		ctx := context.Background()
 		fakeRepo := &FakeWalletRepository{
-			GetAllWalletsFunc: func(ctx context.Context, limit, offset int) ([]Wallet, int, error) {
+			GetAllWalletsFunc: func(ctx context.Context, limit, offset int, includeDeleted bool) ([]Wallet, int, error) {
 				return []Wallet{{Name: "wallet"}}, 1, nil
 			},
 		}
 
 		servieTest := NewWalletService(fakeRepo)
 
-		wallets, total, err := servieTest.GetAllWallets(ctx, 10, 0)
+		wallets, total, err := servieTest.GetAllWallets(ctx, 10, 0, false)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -152,14 +160,14 @@ func TestGetAllWalletsService(t *testing.T) {
 	t.Run("get all wallet - forward error from repo", func(t *testing.T) {
 		ctx := context.Background()
 		fakeRepo := &FakeWalletRepository{
-			GetAllWalletsFunc: func(ctx context.Context, limit, offset int) ([]Wallet, int, error) {
+			GetAllWalletsFunc: func(ctx context.Context, limit, offset int, includeDeleted bool) ([]Wallet, int, error) {
 				return nil, 0, errors.New("error DB")
 			},
 		}
 
 		servieTest := NewWalletService(fakeRepo)
 
-		_, _, err := servieTest.GetAllWallets(ctx, 10, 0)
+		_, _, err := servieTest.GetAllWallets(ctx, 10, 0, false)
 
 		if err == nil {
 			t.Error("harusnya error DB, tetapi tidak dapat")

@@ -4,12 +4,13 @@ import "context"
 
 type WalletServicer interface {
 	CreateWallet(ctx context.Context, reqBody *CreateWalletRequest) (Wallet, error)
-	GetAllWallets(ctx context.Context, limit int, offset int) ([]Wallet, int, error)
+	GetAllWallets(ctx context.Context, limit int, offset int, includeDeleted bool) ([]Wallet, int, error)
 	PatchWallet(ctx context.Context, id string, reqBody *PatchWalletRequest) (Wallet, error)
 	GetWalletByID(ctx context.Context, id string) (Wallet, error)
 	DeleteWallet(ctx context.Context, id string) (Wallet, error)
 	RestoreWallet(ctx context.Context, id string) (Wallet, error)
 	IsWalletExist(ctx context.Context, id string) error
+	TotalBalance(ctx context.Context) (int, error)
 }
 
 type WalletService struct {
@@ -24,8 +25,8 @@ func (s *WalletService) CreateWallet(ctx context.Context, reqBody *CreateWalletR
 	return s.repo.CreateWallet(ctx, reqBody.Name, reqBody.Type, reqBody.InitialBalance, reqBody.Color, reqBody.Icon, reqBody.IsExcludedFromTotal)
 }
 
-func (s *WalletService) GetAllWallets(ctx context.Context, limit int, offet int) ([]Wallet, int, error) {
-	return s.repo.GetAllWallets(ctx, limit, offet)
+func (s *WalletService) GetAllWallets(ctx context.Context, limit int, offset int, includeDeleted bool) ([]Wallet, int, error) {
+	return s.repo.GetAllWallets(ctx, limit, offset, includeDeleted)
 }
 
 func (s *WalletService) PatchWallet(ctx context.Context, id string, reqBody *PatchWalletRequest) (Wallet, error) {
@@ -44,7 +45,14 @@ func (s *WalletService) RestoreWallet(ctx context.Context, id string) (Wallet, e
 	return s.repo.RestoreWallet(ctx, id)
 }
 
+// IsWalletExist sengaja memakai GetWalletByID yang sudah memfilter
+// deleted_at IS NULL, jadi wallet yang sudah dihapus otomatis ditolak untuk
+// transaksi baru (business rule 6).
 func (s *WalletService) IsWalletExist(ctx context.Context, id string) error {
 	_, err := s.repo.GetWalletByID(ctx, id)
 	return err
+}
+
+func (s *WalletService) TotalBalance(ctx context.Context) (int, error) {
+	return s.repo.TotalBalance(ctx)
 }

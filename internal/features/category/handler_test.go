@@ -11,7 +11,7 @@ import (
 
 type FakeCategoryService struct {
 	CreateCategoryFunc   func(ctx context.Context, requestBody *CreateCategoryRequest) (Category, error)
-	GetAllCategoriesFunc func(ctx context.Context, limit int, offset int) ([]Category, int, error)
+	GetAllCategoriesFunc func(ctx context.Context, limit int, offset int, catType string, includeDeleted bool) ([]Category, int, error)
 	PatchCategoryFunc    func(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error)
 	DeleteCategoryFunc   func(ctx context.Context, id string) (Category, error)
 	GetCategoryByIDFunc  func(ctx context.Context, id string) (Category, error)
@@ -22,8 +22,8 @@ func (s *FakeCategoryService) CreateCategory(ctx context.Context, requestBody *C
 	return s.CreateCategoryFunc(ctx, requestBody)
 }
 
-func (s *FakeCategoryService) GetAllCategories(ctx context.Context, limit int, offset int) ([]Category, int, error) {
-	return s.GetAllCategoriesFunc(ctx, limit, offset)
+func (s *FakeCategoryService) GetAllCategories(ctx context.Context, limit int, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
+	return s.GetAllCategoriesFunc(ctx, limit, offset, catType, includeDeleted)
 }
 
 func (s *FakeCategoryService) PatchCategory(ctx context.Context, id string, requestBody *PatchCategoryRequest) (Category, error) {
@@ -101,7 +101,7 @@ func TestGetAllCategoriesHandler(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var getLimit, getOffset int
 		fakeService := &FakeCategoryService{
-			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int) ([]Category, int, error) {
+			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
 				getLimit = limit
 				getOffset = offset
 				return []Category{{Name: "hallo"}}, 1, nil
@@ -132,7 +132,7 @@ func TestGetAllCategoriesHandler(t *testing.T) {
 		var getLimit, getOffset int
 
 		fakeService := &FakeCategoryService{
-			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int) ([]Category, int, error) {
+			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
 				getLimit = limit
 				getOffset = offset
 				return []Category{{Name: "hallo"}}, 1, nil
@@ -163,7 +163,7 @@ func TestGetAllCategoriesHandler(t *testing.T) {
 		var getLimit, getOffset int
 
 		fakeService := &FakeCategoryService{
-			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int) ([]Category, int, error) {
+			GetAllCategoriesFunc: func(ctx context.Context, limit, offset int, catType string, includeDeleted bool) ([]Category, int, error) {
 				getLimit = limit
 				getOffset = offset
 				return []Category{{Name: "hallo"}}, 1, nil
@@ -217,7 +217,8 @@ func TestPatchCategoryHandler(t *testing.T) {
 
 			h := NewCategoryHandler(fakeService)
 
-			req := httptest.NewRequest(http.MethodPatch, "/category/some-id", strings.NewReader(tt.body))
+			req := httptest.NewRequest(http.MethodPatch, "/categories/some-id", strings.NewReader(tt.body))
+			req.SetPathValue("id", "some-id")
 			rec := httptest.NewRecorder()
 
 			h.HandlerCategoryByID(rec, req)
@@ -238,7 +239,8 @@ func TestPatchCategoryHandler(t *testing.T) {
 		h := NewCategoryHandler(fakeService)
 
 		body := `{"name":"Makan", "type":"expense", "color":"#FFFFFF","icon":"iniicon"}`
-		req := httptest.NewRequest(http.MethodPatch, "/category/some-id", strings.NewReader(body))
+		req := httptest.NewRequest(http.MethodPatch, "/categories/some-id", strings.NewReader(body))
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 		h.HandlerCategoryByID(rec, req)
 
@@ -257,7 +259,8 @@ func TestPatchCategoryHandler(t *testing.T) {
 		h := NewCategoryHandler(fakeService)
 
 		body := `{"name":"Makan", "type":"expense", "color":"#FFFFFF","icon":"iniicon"}`
-		req := httptest.NewRequest(http.MethodPatch, "/category/some-id", strings.NewReader(body))
+		req := httptest.NewRequest(http.MethodPatch, "/categories/some-id", strings.NewReader(body))
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 		h.HandlerCategoryByID(rec, req)
 
@@ -278,7 +281,8 @@ func TestDeleteCategoryHandler(t *testing.T) {
 
 		h := NewCategoryHandler(fakeService)
 
-		req := httptest.NewRequest(http.MethodDelete, "/category/some-id", nil)
+		req := httptest.NewRequest(http.MethodDelete, "/categories/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerCategoryByID(rec, req)
@@ -297,7 +301,8 @@ func TestDeleteCategoryHandler(t *testing.T) {
 
 		h := NewCategoryHandler(fakeService)
 
-		req := httptest.NewRequest(http.MethodDelete, "/category/some-id", nil)
+		req := httptest.NewRequest(http.MethodDelete, "/categories/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerCategoryByID(rec, req)
@@ -318,7 +323,8 @@ func TestGetCategoryByIDHandler(t *testing.T) {
 
 		h := NewCategoryHandler(fakeService)
 
-		req := httptest.NewRequest(http.MethodGet, "/category/some-id", nil)
+		req := httptest.NewRequest(http.MethodGet, "/categories/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerCategoryByID(rec, req)
@@ -337,7 +343,8 @@ func TestGetCategoryByIDHandler(t *testing.T) {
 
 		h := NewCategoryHandler(fakeService)
 
-		req := httptest.NewRequest(http.MethodGet, "/category/some-id", nil)
+		req := httptest.NewRequest(http.MethodGet, "/categories/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
 		h.HandlerCategoryByID(rec, req)
@@ -358,10 +365,11 @@ func TestRestoreCategoryHandler(t *testing.T) {
 
 		h := NewCategoryHandler(fakeService)
 
-		req := httptest.NewRequest(http.MethodPost, "/category/some-id", nil)
+		req := httptest.NewRequest(http.MethodPost, "/categories/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
-		h.HandlerCategoryByID(rec, req)
+		h.HandlerRestoreCategory(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("status %d, want %d", rec.Code, http.StatusOK)
@@ -377,10 +385,11 @@ func TestRestoreCategoryHandler(t *testing.T) {
 
 		h := NewCategoryHandler(fakeService)
 
-		req := httptest.NewRequest(http.MethodPost, "/category/some-id", nil)
+		req := httptest.NewRequest(http.MethodPost, "/categories/some-id", nil)
+		req.SetPathValue("id", "some-id")
 		rec := httptest.NewRecorder()
 
-		h.HandlerCategoryByID(rec, req)
+		h.HandlerRestoreCategory(rec, req)
 
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("status %d, want %d", rec.Code, http.StatusNotFound)
