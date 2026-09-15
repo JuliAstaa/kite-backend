@@ -254,7 +254,7 @@ Partial unique index pada `(lower(name), type) WHERE deleted_at IS NULL`.
 | `deleted_at` | TIMESTAMPTZ NULL | |
 | `created_at`, `updated_at` | TIMESTAMPTZ | |
 
-**Index:**
+**Index:** 
 ```sql
 CREATE INDEX ON transactions (occurred_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX ON transactions (type, occurred_at) WHERE deleted_at IS NULL;
