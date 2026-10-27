@@ -1,4 +1,4 @@
-.PHONY: help run build test test-unit vet fmt tidy db-up db-down db-logs migrate-status backup clean
+.PHONY: help run build test test-unit vet fmt tidy db-up db-down db-logs up down logs migrate-status backup clean
 
 APP_NAME := finance-api
 BIN_DIR  := bin
@@ -33,13 +33,22 @@ tidy: ## Rapikan go.mod
 	go mod tidy
 
 db-up: ## Nyalakan Postgres lewat Docker Compose
-	docker compose up -d
+	docker compose up -d db
 
 db-down: ## Matikan Postgres
-	docker compose down
+	docker compose stop db
 
 db-logs: ## Lihat log Postgres
 	docker compose logs -f db
+
+up: ## Build dan jalankan API + Postgres lewat Docker Compose (untuk server)
+	docker compose up -d --build
+
+down: ## Matikan API + Postgres (data di volume tetap aman)
+	docker compose down
+
+logs: ## Lihat log API
+	docker compose logs -f api
 
 migrate-status: ## Lihat migration yang sudah jalan
 	@echo "Migration dijalankan otomatis saat 'make run'."

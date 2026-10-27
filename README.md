@@ -12,6 +12,25 @@ make run                  # migration jalan otomatis saat startup
 curl localhost:8080/api/v1/health
 ```
 
+## Deploy ke server
+
+API dan Postgres jalan lewat Docker Compose. Di dalam container app selalu
+listen di `8080`, jadi tidak bentrok dengan aplikasi lain di server yang
+memakai port itu. Yang perlu kosong hanya port di sisi host.
+
+```bash
+cp .env.example .env
+# Isi minimal: APP_ENV=production, API_TOKEN, CORS_ALLOWED_ORIGINS,
+# POSTGRES_PASSWORD. Ganti API_HOST_PORT / DB_HOST_PORT kalau bentrok.
+make up                                   # build image, nyalakan api + db
+curl -H "X-API-Token: $TOKEN" localhost:8081/api/v1/health
+```
+
+API dan Postgres default-nya hanya bisa dihubungi dari `127.0.0.1` di server.
+Arahkan reverse proxy ke `http://127.0.0.1:8081`, atau isi `API_BIND=0.0.0.0`
+kalau mau diakses langsung. `POSTGRES_PASSWORD` hanya berlaku saat volume
+`pgdata` pertama kali dibuat.
+
 ## Perintah
 
 ```bash

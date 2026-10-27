@@ -1,21 +1,46 @@
+# Nilai ${...} dibaca docker compose dari file .env di folder ini. Lihat
+# bagian "Docker Compose" di .env.example.
 services:
   db:
     image: postgres:16-alpine
     container_name: kite-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: finance
-      POSTGRES_PASSWORD: finance
-      POSTGRES_DB: finance_tracker
+      # Hanya dipakai saat volume pgdata pertama kali dibuat. Mengganti nilai
+      # ini setelahnya tidak mengubah password user yang sudah ada.
+      POSTGRES_USER: ${POSTGRES_USER:-finance}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finance}
+      POSTGRES_DB: ${POSTGRES_DB:-finance_tracker}
     ports:
-      - "5432:5432"
+      # Sengaja di-bind ke 127.0.0.1 supaya Postgres tidak terbuka ke internet
+      # saat jalan di server.
+      - "127.0.0.1:${DB_HOST_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U finance -d finance_tracker"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finance} -d ${POSTGRES_DB:-finance_tracker}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  api:
+    build: .
+    image: kite-api
+    container_name: kite-api
+    restart: unless-stopped
+    env_file: .env
+    # environment menang atas env_file. Tiga nilai ini harus beda dari .env
+    # untuk 'make run': di dalam container app wajib listen di 0.0.0.0:8080,
+    # dan Postgres dihubungi lewat nama service 'db', bukan localhost.
+    environment:
+      APP_HOST: 0.0.0.0
+      PORT: "8080"
+      DB_URL: postgres://${POSTGRES_USER:-finance}:${POSTGRES_PASSWORD:-finance}@db:5432/${POSTGRES_DB:-finance_tracker}?sslmode=disable
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_HOST_PORT:-8081}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:
